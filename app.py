@@ -5,6 +5,20 @@ st.set_page_config(
     page_icon="🧭"
 )
 
+st.markdown("""
+<style>
+div[data-baseweb="input"] > div {
+    background-color: white !important;
+    border: 2px solid #d9d9e3 !important;
+    border-radius: 10px !important;
+}
+
+div[data-baseweb="input"] input {
+    background-color: white !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 st.title("おしコンパス 🧭")
 st.write("好きな場所は、あっち！")
 
