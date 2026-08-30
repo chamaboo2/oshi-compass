@@ -683,7 +683,7 @@ if (
                 "button_text": c["button_text"],
             },
             width="stretch",
-            height=500,
+            height="content",
         )
     else:
         st.error(
@@ -702,7 +702,7 @@ elif (
 # =========================================
 # 聖地検索
 # =========================================
-st.divider()
+st.markdown("<div style=\"height:12px\"></div>", unsafe_allow_html=True)
 
 st.subheader("聖地を探す")
 
@@ -900,7 +900,7 @@ if result:
 # =========================================
 # お気に入り
 # =========================================
-st.divider()
+st.markdown("<div style=\"height:10px\"></div>", unsafe_allow_html=True)
 
 st.subheader(
     "♡ お気に入りの聖地"
@@ -930,42 +930,31 @@ if supabase_connected:
             )
         else:
             for seichi in response.data:
-                with st.container(
-                    border=True
-                ):
-                    col1, col2 = st.columns(
-                        [3, 1]
+                with st.container(border=True):
+                    st.markdown(
+                        f"### ♡ {seichi['name']}"
                     )
 
-                    with col1:
-                        st.markdown(
-                            f"### ♡ "
-                            f"{seichi['name']}"
-                        )
+                    selected_now = bool(
+                        st.session_state.selected_seichi
+                        and st.session_state.selected_seichi.get("id")
+                        == seichi["id"]
+                    )
 
-                    with col2:
-                        selected_now = bool(
-                            st.session_state.selected_seichi
-                            and st.session_state.selected_seichi.get("id")
-                            == seichi["id"]
-                        )
+                    if st.button(
+                        "選択中" if selected_now else "この聖地を選ぶ",
+                        key=f"select_{seichi['id']}",
+                        use_container_width=True,
+                        disabled=selected_now,
+                    ):
+                        st.session_state.selected_seichi = {
+                            "id": seichi["id"],
+                            "name": seichi["name"],
+                            "latitude": seichi["latitude"],
+                            "longitude": seichi["longitude"],
+                        }
 
-                        if st.button(
-                            "選択中"
-                            if selected_now
-                            else "選ぶ",
-                            key=f"select_{seichi['id']}",
-                            use_container_width=True,
-                            disabled=selected_now,
-                        ):
-                            st.session_state.selected_seichi = {
-                                "id": seichi["id"],
-                                "name": seichi["name"],
-                                "latitude": seichi["latitude"],
-                                "longitude": seichi["longitude"],
-                            }
-
-                            st.rerun()
+                        st.rerun()
 
     except Exception as error:
         st.error(
