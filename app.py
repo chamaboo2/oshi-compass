@@ -6,7 +6,6 @@ import urllib.parse
 import urllib.request
 
 import streamlit as st
-from streamlit_geolocation import streamlit_geolocation
 from supabase import create_client
 
 st.set_page_config(
@@ -104,7 +103,6 @@ for key, default in {
     "search_result": None,
     "searched_name": "",
     "selected_seichi": None,
-    "current_location": None,
 }.items():
     if key not in st.session_state:
         st.session_state[key] = default
@@ -387,22 +385,93 @@ export default function(component) {
   card.style.setProperty("--button-border", data.button_border);
   card.style.setProperty("--button-text", data.button_text);
 
-  const destinationBearing = Number(data.destination_bearing);
   const destinationName = String(data.destination_name || "目的地");
+  const destinationLat = Number(data.destination_latitude);
+  const destinationLon = Number(data.destination_longitude);
 
   title.textContent = `${destinationName}はこっち！`;
-  bearingText.textContent =
-    `${data.destination_direction} ${Math.round(destinationBearing)}°`;
-
-  // センサー開始前は「北が画面上」の地図基準表示
-  arrow.style.transform = `rotate(${destinationBearing}deg)`;
+  bearingText.textContent = "現在地を取得すると方角を表示";
 
   let started = false;
-  let gotEvent = false;
+  let gotOrientation = false;
   let gotAbsolute = false;
+  let gotLocation = false;
+  let currentHeading = null;
+  let destinationBearing = null;
+  let watchId = null;
   let timer = null;
 
   const norm = (value) => ((value % 360) + 360) % 360;
+  const toRad = (value) => value * Math.PI / 180;
+  const toDeg = (value) => value * 180 / Math.PI;
+
+  const directions = [
+    "北", "北東", "東", "南東",
+    "南", "南西", "西", "北西"
+  ];
+
+  function direction(value) {
+    return directions[Math.floor((value + 22.5) / 45) % 8];
+  }
+
+  function calculateBearing(lat1Deg, lon1Deg, lat2Deg, lon2Deg) {
+    const lat1 = toRad(lat1Deg);
+    const lat2 = toRad(lat2Deg);
+    const dLon = toRad(lon2Deg - lon1Deg);
+
+    const x = Math.sin(dLon) * Math.cos(lat2);
+    const y =
+      Math.cos(lat1) * Math.sin(lat2)
+      - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+
+    return norm(toDeg(Math.atan2(x, y)));
+  }
+
+  function applyCompass() {
+    if (destinationBearing === null) {
+      return;
+    }
+
+    bearingText.textContent =
+      `目的地：${direction(destinationBearing)} ${Math.round(destinationBearing)}°`;
+
+    if (currentHeading === null) {
+      arrow.style.transform = `rotate(${destinationBearing}deg)`;
+      return;
+    }
+
+    const relativeBearing = norm(destinationBearing - currentHeading);
+    arrow.style.transform = `rotate(${relativeBearing}deg)`;
+  }
+
+  function refreshStatus() {
+    if (!gotLocation && !gotOrientation) {
+      status.textContent = "現在地と方位を取得しています…";
+      status.style.color = "";
+      return;
+    }
+
+    if (!gotLocation) {
+      status.textContent = "現在地を取得しています…";
+      status.style.color = "";
+      return;
+    }
+
+    if (!gotOrientation) {
+      status.textContent = "スマホの向きを取得しています…";
+      status.style.color = "";
+      return;
+    }
+
+    if (gotAbsolute) {
+      status.textContent = "✓ おしの方向を追跡中";
+      status.style.color = "#2F9B63";
+    } else {
+      status.textContent =
+        "方位は取得中ですが、北基準ではない可能性があります";
+      status.style.color = "#C88724";
+    }
+  }
 
   function extractHeading(event) {
     if (
@@ -432,42 +501,55 @@ export default function(component) {
     };
   }
 
-  function updateCompass(result) {
+  function updateOrientation(result) {
     if (!result) return;
 
-    gotEvent = true;
+    gotOrientation = true;
+    currentHeading = result.heading;
 
     if (result.absolute) {
       gotAbsolute = true;
     }
 
-    // 目的地の絶対方位 - スマホの絶対方位
-    // 自分が目的地を向けば 0° = 真上になる
-    const relativeBearing =
-      norm(destinationBearing - result.heading);
-
-    arrow.style.transform =
-      `rotate(${relativeBearing}deg)`;
-
-    if (result.absolute) {
-      status.textContent = "✓ おしの方向を追跡中";
-      status.style.color = "#2F9B63";
-    } else if (!gotAbsolute) {
-      status.textContent =
-        "方位は取得中ですが、北基準ではない可能性があります";
-      status.style.color = "#C88724";
-    }
+    applyCompass();
+    refreshStatus();
   }
 
   const absoluteHandler = (event) => {
-    updateCompass(extractHeading(event));
+    updateOrientation(extractHeading(event));
   };
 
   const relativeHandler = (event) => {
     if (!gotAbsolute) {
-      updateCompass(extractHeading(event));
+      updateOrientation(extractHeading(event));
     }
   };
+
+  function positionSuccess(position) {
+    const latitude = position.coords.latitude;
+    const longitude = position.coords.longitude;
+
+    destinationBearing = calculateBearing(
+      latitude,
+      longitude,
+      destinationLat,
+      destinationLon
+    );
+
+    gotLocation = true;
+    applyCompass();
+    refreshStatus();
+  }
+
+  function positionError(error) {
+    if (error && error.code === 1) {
+      status.textContent = "位置情報の利用が許可されませんでした";
+    } else {
+      status.textContent = "現在地を取得できませんでした";
+    }
+
+    status.style.color = "#C54B4B";
+  }
 
   async function startCompass() {
     if (started) return;
@@ -477,37 +559,36 @@ export default function(component) {
       return;
     }
 
+    if (!navigator.geolocation) {
+      status.textContent = "この端末では位置情報を利用できません";
+      return;
+    }
+
     if (typeof DeviceOrientationEvent === "undefined") {
-      status.textContent =
-        "このスマートフォンでは方位センサーを利用できません";
+      status.textContent = "この端末では方位センサーを利用できません";
       return;
     }
 
     try {
-      if (
-        typeof DeviceOrientationEvent.requestPermission === "function"
-      ) {
+      if (typeof DeviceOrientationEvent.requestPermission === "function") {
         let permission;
 
         try {
-          permission =
-            await DeviceOrientationEvent.requestPermission(true);
+          permission = await DeviceOrientationEvent.requestPermission(true);
         } catch (error) {
-          permission =
-            await DeviceOrientationEvent.requestPermission();
+          permission = await DeviceOrientationEvent.requestPermission();
         }
 
         if (permission !== "granted") {
-          status.textContent =
-            "方位センサーの利用が許可されませんでした";
+          status.textContent = "方位センサーの利用が許可されませんでした";
+          status.style.color = "#C54B4B";
           return;
         }
       }
 
       started = true;
-      start.disabled = true;
-      start.textContent = "おしコンパス起動中";
-      status.textContent = "方位を確認しています…";
+      start.style.display = "none";
+      status.textContent = "現在地と方位を取得しています…";
 
       window.addEventListener(
         "deviceorientationabsolute",
@@ -521,16 +602,25 @@ export default function(component) {
         true
       );
 
-      timer = window.setTimeout(() => {
-        if (!gotEvent) {
-          status.textContent =
-            "方位情報を取得できませんでした";
+      watchId = navigator.geolocation.watchPosition(
+        positionSuccess,
+        positionError,
+        {
+          enableHighAccuracy: true,
+          timeout: 12000,
+          maximumAge: 3000
         }
-      }, 5000);
+      );
+
+      timer = window.setTimeout(() => {
+        if (!gotLocation || !gotOrientation) {
+          refreshStatus();
+        }
+      }, 6000);
 
     } catch (error) {
-      status.textContent =
-        "おしコンパスを開始できませんでした";
+      status.textContent = "おしコンパスを開始できませんでした";
+      status.style.color = "#C54B4B";
     }
   }
 
@@ -549,10 +639,11 @@ export default function(component) {
       true
     );
 
-    start.removeEventListener(
-      "click",
-      startCompass
-    );
+    start.removeEventListener("click", startCompass);
+
+    if (watchId !== null) {
+      navigator.geolocation.clearWatch(watchId);
+    }
 
     if (timer !== null) {
       window.clearTimeout(timer);
@@ -640,57 +731,18 @@ if st.session_state.selected_seichi:
 
 
 # =========================================
-# 現在地
-# =========================================
-st.markdown(
-    f'<div style="font-size:14px;font-weight:700;color:{c["sub"]};'
-    f'margin-top:2px;margin-bottom:0;">📍 位置情報</div>',
-    unsafe_allow_html=True,
-)
-
-location = streamlit_geolocation()
-
-if (
-    isinstance(location, dict)
-    and location.get("latitude") is not None
-    and location.get("longitude") is not None
-):
-    st.session_state.current_location = {
-        "latitude": float(location["latitude"]),
-        "longitude": float(location["longitude"]),
-        "accuracy": location.get("accuracy"),
-    }
-
-if st.session_state.current_location:
-    st.caption("現在地を使用中")
-else:
-    st.caption("位置情報ボタンを押してください")
-
-
-# =========================================
 # おしコンパス本体
 # =========================================
-if (
-    st.session_state.current_location
-    and st.session_state.selected_seichi
-):
-    current = st.session_state.current_location
+if st.session_state.selected_seichi:
     destination = st.session_state.selected_seichi
-
-    bearing = calculate_bearing(
-        current["latitude"],
-        current["longitude"],
-        destination["latitude"],
-        destination["longitude"],
-    )
 
     if realtime_compass is not None:
         realtime_compass(
             key=f"realtime_compass_{destination['id']}",
             data={
                 "destination_name": destination["name"],
-                "destination_bearing": bearing,
-                "destination_direction": direction_name(bearing),
+                "destination_latitude": destination["latitude"],
+                "destination_longitude": destination["longitude"],
                 "card_background": c["card"],
                 "card_border": c["card_border"],
                 "text_color": c["text"],
@@ -709,17 +761,9 @@ if (
             height="content",
         )
     else:
-        st.error(
-            "おしコンパスを読み込めませんでした"
-        )
-
-elif (
-    st.session_state.current_location
-    and not st.session_state.selected_seichi
-):
-    st.info(
-        "お気に入りの聖地から目的地を選んでください"
-    )
+        st.error("おしコンパスを読み込めませんでした")
+else:
+    st.info("お気に入りの聖地から目的地を選んでください")
 
 
 # =========================================
