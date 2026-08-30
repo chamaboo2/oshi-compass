@@ -683,7 +683,7 @@ title_html = (
     f'font-size:17px;'
     f'font-weight:700;'
     f'color:{c["accent"]};">'
-    f'好きな場所は、あっち！'
+    f'足を向けて寝ちゃだめな場所、みっけ！'
     f'</div>'
     f'</div>'
 )
@@ -920,7 +920,6 @@ if result:
                         supabase
                         .table("seichi")
                         .select("id")
-                        .eq("name", save_name)
                         .eq("latitude", latitude)
                         .eq("longitude", longitude)
                         .limit(1)
@@ -965,9 +964,6 @@ if result:
 # =========================================
 # お気に入り
 # =========================================
-# =========================================
-# お気に入り
-# =========================================
 st.divider()
 
 st.markdown("### ♡ お気に入りの聖地")
@@ -993,24 +989,80 @@ if supabase_connected:
                     and st.session_state.selected_seichi.get("id") == seichi["id"]
                 )
 
-                if selected_now:
-                    button_label = f"♡ {seichi['name']}　✓ 選択中"
-                else:
-                    button_label = f"♡ {seichi['name']}"
+                with st.container(border=True):
+                    if selected_now:
+                        st.markdown(f"#### ♡ {seichi['name']}　✓ 選択中")
+                    else:
+                        st.markdown(f"#### ♡ {seichi['name']}")
 
-                if st.button(
-                    button_label,
-                    key=f"favorite_{seichi['id']}",
-                    use_container_width=True,
-                    disabled=selected_now,
-                ):
-                    st.session_state.selected_seichi = {
-                        "id": seichi["id"],
-                        "name": seichi["name"],
-                        "latitude": seichi["latitude"],
-                        "longitude": seichi["longitude"],
-                    }
-                    st.rerun()
+                    if not selected_now:
+                        if st.button(
+                            "この場所を選ぶ",
+                            key=f"favorite_{seichi['id']}",
+                            use_container_width=True,
+                        ):
+                            st.session_state.selected_seichi = {
+                                "id": seichi["id"],
+                                "name": seichi["name"],
+                                "latitude": seichi["latitude"],
+                                "longitude": seichi["longitude"],
+                            }
+                            st.rerun()
+
+                    with st.expander("✏️ 名前を変更"):
+                        with st.form(
+                            key=f"rename_form_{seichi['id']}",
+                            clear_on_submit=False,
+                        ):
+                            new_name = st.text_input(
+                                "新しい名前",
+                                value=seichi["name"],
+                                key=f"rename_input_{seichi['id']}",
+                            )
+
+                            rename_submitted = st.form_submit_button(
+                                "名前を保存",
+                                use_container_width=True,
+                            )
+
+                        if rename_submitted:
+                            cleaned_name = new_name.strip()
+
+                            if not cleaned_name:
+                                st.warning("新しい名前を入力してください。")
+                            elif cleaned_name == seichi["name"]:
+                                st.info("名前は変更されていません。")
+                            else:
+                                try:
+                                    (
+                                        supabase
+                                        .table("seichi")
+                                        .update({"name": cleaned_name})
+                                        .eq("id", seichi["id"])
+                                        .execute()
+                                    )
+
+                                    if selected_now:
+                                        st.session_state.selected_seichi = {
+                                            "id": seichi["id"],
+                                            "name": cleaned_name,
+                                            "latitude": seichi["latitude"],
+                                            "longitude": seichi["longitude"],
+                                        }
+
+                                    st.success(
+                                        f"「{seichi['name']}」を「{cleaned_name}」に変更しました。"
+                                    )
+                                    st.rerun()
+
+                                except Exception as error:
+                                    st.error("名前を変更できませんでした。")
+                                    st.caption(
+                                        "SupabaseのRLSでUPDATEが許可されているかも確認してください。"
+                                    )
+                                    st.caption(
+                                        f"エラー種類：{type(error).__name__}"
+                                    )
 
     except Exception as error:
         st.error("登録済みの聖地を読み込めませんでした")
