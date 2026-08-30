@@ -201,6 +201,31 @@ div[data-testid="stVerticalBlockBorderWrapper"] {{
     border: 1px solid {c["card_border"]} !important;
     border-radius: 22px !important;
 }}
+
+@media (max-width: 600px) {{
+    .block-container {{
+        max-width: 100%;
+        padding-top: 0.8rem;
+        padding-left: 0.9rem;
+        padding-right: 0.9rem;
+        padding-bottom: 2rem;
+    }}
+
+    div[data-testid="stVerticalBlock"] {{
+        gap: 0.55rem;
+    }}
+
+    .stButton > button {{
+        min-height: 44px;
+        font-size: 15px;
+    }}
+
+    div[data-testid="stTextInput"] input {{
+        min-height: 46px;
+        font-size: 16px;
+    }}
+}}
+
 </style>""",
     unsafe_allow_html=True,
 )
@@ -554,16 +579,17 @@ except Exception:
 title_html = (
     f'<div style="background:{c["soft"]};'
     f'border:1px solid {c["line"]};'
-    f'border-radius:24px;'
-    f'padding:24px;'
-    f'margin-bottom:18px;">'
-    f'<div style="font-size:48px;'
+    f'border-radius:22px;'
+    f'padding:18px 20px;'
+    f'margin-bottom:10px;">'
+    f'<div style="font-size:38px;'
+    f'line-height:1.15;'
     f'font-weight:800;'
     f'color:{c["text"]};">'
     f'おしコンパス 🧭'
     f'</div>'
-    f'<div style="margin-top:8px;'
-    f'font-size:24px;'
+    f'<div style="margin-top:6px;'
+    f'font-size:17px;'
     f'font-weight:700;'
     f'color:{c["accent"]};">'
     f'好きな場所は、あっち！'
@@ -598,9 +624,9 @@ if st.session_state.selected_seichi:
         f'<div style="background:{c["selected"]};'
         f'border:1px solid {c["line"]};'
         f'border-radius:18px;'
-        f'padding:14px 18px;'
-        f'margin-bottom:16px;'
-        f'font-size:20px;'
+        f'padding:10px 14px;'
+        f'margin-bottom:8px;'
+        f'font-size:16px;'
         f'font-weight:700;'
         f'color:{c["text"]};">'
         f'🧭 現在の目的地：{selected_name}'
@@ -616,9 +642,11 @@ if st.session_state.selected_seichi:
 # =========================================
 # 現在地
 # =========================================
-st.divider()
-
-st.subheader("📍 現在地")
+st.markdown(
+    f'<div style="font-size:14px;font-weight:700;color:{c["sub"]};'
+    f'margin-top:2px;margin-bottom:0;">📍 位置情報</div>',
+    unsafe_allow_html=True,
+)
 
 location = streamlit_geolocation()
 
@@ -633,15 +661,10 @@ if (
         "accuracy": location.get("accuracy"),
     }
 
-
 if st.session_state.current_location:
-    st.success(
-        "📍 現在地を取得できました"
-    )
+    st.caption("現在地を使用中")
 else:
-    st.info(
-        "現在地を取得してください"
-    )
+    st.caption("位置情報ボタンを押してください")
 
 
 # =========================================
@@ -702,13 +725,11 @@ elif (
 # =========================================
 # 聖地検索
 # =========================================
-st.markdown("<div style=\"height:12px\"></div>", unsafe_allow_html=True)
+st.markdown("<div style=\"height:4px\"></div>", unsafe_allow_html=True)
 
-st.subheader("聖地を探す")
+st.markdown("### 🔎 聖地を探す")
 
-st.markdown(
-    "**🔎 行きたい場所・好きな場所を入力**"
-)
+st.caption("行きたい場所・好きな場所を入力")
 
 place_name = st.text_input(
     "場所を入力",
@@ -905,7 +926,7 @@ if result:
 # =========================================
 st.divider()
 
-st.subheader("♡ お気に入りの聖地")
+st.markdown("### ♡ お気に入りの聖地")
 
 if supabase_connected:
     try:
