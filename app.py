@@ -350,9 +350,6 @@ if (
         str(destination["name"])
     )
 
-    # 重要：
-    # HTMLを完全に1行で作り、
-    # Markdownのコードブロック化を防ぐ
     compass_html = (
         f'<div style="text-align:center;padding:25px 10px 35px 10px;color:{compass_text};">'
         f'<div style="font-size:27px;font-weight:700;margin-bottom:22px;">'
@@ -699,10 +696,11 @@ if supabase_connected:
 
                     with col2:
 
-                        selected_now = (
+                        # 必ずTrueまたはFalseにする
+                        selected_now = bool(
                             st.session_state.selected_seichi
                             and
-                            st.session_state.selected_seichi["id"]
+                            st.session_state.selected_seichi.get("id")
                             == seichi["id"]
                         )
 
