@@ -4,7 +4,7 @@ import urllib.request
 import urllib.error
 import json
 import math
-import textwrap
+import html
 
 from supabase import create_client
 from streamlit_geolocation import streamlit_geolocation
@@ -166,128 +166,92 @@ night_mode = st.toggle("🌙 夜モード")
 
 
 # =========================================
-# デザイン
+# 色設定
 # =========================================
 
 if night_mode:
 
-    st.markdown(
-        """
-        <style>
+    background_color = "#141827"
+    text_color = "#F5F7FF"
+    input_background = "#20283D"
+    input_border = "#71809E"
 
-        .stApp {
-            background-color: #141827 !important;
-            color: #F5F7FF !important;
-        }
+    compass_background = "#20283D"
+    compass_border = "#71809E"
+    compass_text = "#F5F7FF"
 
-        h1, h2, h3, p, label {
-            color: #F5F7FF !important;
-        }
-
-        hr {
-            border-color: #303A55 !important;
-        }
-
-        div[data-testid="stTextInput"] input {
-            background-color: #20283D !important;
-            color: #FFFFFF !important;
-            border: 2px solid #71809E !important;
-            border-radius: 12px !important;
-        }
-
-        div[data-testid="stTextInput"] input::placeholder {
-            color: #AEB9CC !important;
-        }
-
-        div[data-testid="stTextInput"] input:focus {
-            border: 2px solid #9FC5FF !important;
-        }
-
-        .stButton button {
-            background-color: #294669 !important;
-            color: #FFFFFF !important;
-            border: 1px solid #7795BA !important;
-            border-radius: 12px !important;
-        }
-
-        .stButton button p,
-        .stButton button span {
-            color: #FFFFFF !important;
-        }
-
-        .stButton button:hover {
-            background-color: #365A84 !important;
-            color: #FFFFFF !important;
-        }
-
-        div[data-testid="stVerticalBlockBorderWrapper"] {
-            background-color: #1C2437 !important;
-            border-radius: 16px !important;
-        }
-
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-
-    compass_text_color = "#F5F7FF"
-    compass_circle_color = "#20283D"
-    compass_border_color = "#71809E"
+    button_background = "#294669"
+    button_border = "#7795BA"
+    button_text = "#FFFFFF"
 
 else:
 
-    st.markdown(
-        """
-        <style>
+    background_color = "#FFFFFF"
+    text_color = "#1F2937"
+    input_background = "#FFFFFF"
+    input_border = "#A0A6B2"
 
-        div[data-testid="stTextInput"] input {
-            background-color: #FFFFFF !important;
-            color: #222222 !important;
-            border: 2px solid #A0A6B2 !important;
-            border-radius: 12px !important;
-        }
+    compass_background = "#F7F8FB"
+    compass_border = "#CBD1DA"
+    compass_text = "#1F2937"
 
-        div[data-testid="stTextInput"] input::placeholder {
-            color: #8B91A0 !important;
-        }
-
-        div[data-testid="stTextInput"] input:focus {
-            border: 2px solid #607DA5 !important;
-        }
-
-        .stButton button {
-            background-color: #FFFFFF !important;
-            color: #222222 !important;
-            border: 1px solid #CDD1D8 !important;
-            border-radius: 12px !important;
-        }
-
-        .stButton button p,
-        .stButton button span {
-            color: #222222 !important;
-        }
-
-        .stButton button:hover {
-            background-color: #F3F5F8 !important;
-        }
-
-        div[data-testid="stVerticalBlockBorderWrapper"] {
-            background-color: #FAFAFC !important;
-            border-radius: 16px !important;
-        }
-
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-
-    compass_text_color = "#1F2937"
-    compass_circle_color = "#F7F8FB"
-    compass_border_color = "#CBD1DA"
+    button_background = "#FFFFFF"
+    button_border = "#CDD1D8"
+    button_text = "#222222"
 
 
 # =========================================
-# メイン画面
+# 共通CSS
+# =========================================
+
+st.markdown(
+    f"""
+    <style>
+
+    .stApp {{
+        background-color: {background_color} !important;
+        color: {text_color} !important;
+    }}
+
+    h1, h2, h3, p, label {{
+        color: {text_color} !important;
+    }}
+
+    div[data-testid="stTextInput"] input {{
+        background-color: {input_background} !important;
+        color: {text_color} !important;
+        border: 2px solid {input_border} !important;
+        border-radius: 12px !important;
+    }}
+
+    div[data-testid="stTextInput"] input::placeholder {{
+        color: #929BAD !important;
+    }}
+
+    .stButton button {{
+        background-color: {button_background} !important;
+        color: {button_text} !important;
+        border: 1px solid {button_border} !important;
+        border-radius: 12px !important;
+    }}
+
+    .stButton button p,
+    .stButton button span {{
+        color: {button_text} !important;
+    }}
+
+    div[data-testid="stVerticalBlockBorderWrapper"] {{
+        border-radius: 16px !important;
+    }}
+
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+
+# =========================================
+# タイトル
 # =========================================
 
 st.title("おしコンパス 🧭")
@@ -301,12 +265,19 @@ st.write("好きな場所は、あっち！")
 # =========================================
 
 if supabase_connected:
-    st.success("✅ Supabase接続OK")
+
+    st.success(
+        "✅ Supabase接続OK"
+    )
 
 else:
-    st.error("Supabaseに接続できませんでした")
+
+    st.error(
+        "Supabaseに接続できませんでした"
+    )
 
     if supabase_error_type:
+
         st.caption(
             f"エラー種類：{supabase_error_type}"
         )
@@ -319,6 +290,7 @@ else:
 st.divider()
 
 st.subheader("📍 現在地")
+
 
 location = streamlit_geolocation()
 
@@ -350,7 +322,7 @@ else:
 
 
 # =========================================
-# コンパス表示
+# コンパス
 # =========================================
 
 if (
@@ -374,59 +346,34 @@ if (
 
     bearing_display = round(bearing)
 
-    st.divider()
-
-    compass_html = textwrap.dedent(
-        f"""
-        <div style="
-            text-align: center;
-            padding: 20px 10px 35px 10px;
-            color: {compass_text_color};
-        ">
-
-            <div style="
-                font-size: 27px;
-                font-weight: 700;
-                margin-bottom: 22px;
-            ">
-                {destination["name"]}はこっち！
-            </div>
-
-            <div style="
-                width: 190px;
-                height: 190px;
-                margin: 0 auto;
-                border-radius: 50%;
-                background: {compass_circle_color};
-                border: 3px solid {compass_border_color};
-                display: flex;
-                justify-content: center;
-                align-items: center;
-            ">
-
-                <div style="
-                    font-size: 120px;
-                    line-height: 1;
-                    transform: rotate({bearing}deg);
-                    transform-origin: center center;
-                    display: inline-block;
-                ">
-                    ↑
-                </div>
-
-            </div>
-
-            <div style="
-                font-size: 30px;
-                font-weight: 700;
-                margin-top: 22px;
-            ">
-                {direction_name}　{bearing_display}°
-            </div>
-
-        </div>
-        """
+    safe_name = html.escape(
+        str(destination["name"])
     )
+
+    # 重要：
+    # HTMLを完全に1行で作り、
+    # Markdownのコードブロック化を防ぐ
+    compass_html = (
+        f'<div style="text-align:center;padding:25px 10px 35px 10px;color:{compass_text};">'
+        f'<div style="font-size:27px;font-weight:700;margin-bottom:22px;">'
+        f'{safe_name}はこっち！'
+        f'</div>'
+        f'<div style="width:190px;height:190px;margin:0 auto;border-radius:50%;'
+        f'background:{compass_background};border:3px solid {compass_border};'
+        f'display:flex;justify-content:center;align-items:center;">'
+        f'<div style="font-size:120px;line-height:1;'
+        f'transform:rotate({bearing:.2f}deg);'
+        f'transform-origin:center center;display:inline-block;">'
+        f'↑'
+        f'</div>'
+        f'</div>'
+        f'<div style="font-size:30px;font-weight:700;margin-top:22px;">'
+        f'{direction_name}　{bearing_display}°'
+        f'</div>'
+        f'</div>'
+    )
+
+    st.divider()
 
     st.markdown(
         compass_html,
@@ -453,6 +400,7 @@ st.markdown(
     "**🔍 行きたい場所・好きな場所を入力**"
 )
 
+
 place_name = st.text_input(
     "場所を入力",
     placeholder="ここに入力　例：東京タワー、東京駅、秋葉原",
@@ -460,7 +408,10 @@ place_name = st.text_input(
 )
 
 
-if st.button("検索"):
+if st.button(
+    "検索",
+    key="search_button"
+):
 
     if not place_name.strip():
 
@@ -481,9 +432,13 @@ if st.button("検索"):
                 )
 
                 st.session_state.search_result = result
-                st.session_state.searched_name = place_name.strip()
+
+                st.session_state.searched_name = (
+                    place_name.strip()
+                )
 
                 if result is None:
+
                     st.warning(
                         "場所が見つかりませんでした。"
                     )
@@ -493,7 +448,8 @@ if st.button("検索"):
                 st.session_state.search_result = None
 
                 st.error(
-                    f"検索サービスとの通信でエラーが発生しました。"
+                    f"検索サービスとの通信で"
+                    f"エラーが発生しました。"
                     f"（HTTP {e.code}）"
                 )
 
@@ -512,6 +468,7 @@ if st.button("検索"):
 
 result = st.session_state.search_result
 
+
 if result:
 
     geometry = result.get(
@@ -529,6 +486,7 @@ if result:
         []
     )
 
+
     if len(coordinates) >= 2:
 
         longitude = float(
@@ -539,6 +497,7 @@ if result:
             coordinates[1]
         )
 
+
         st.divider()
 
         st.subheader(
@@ -546,8 +505,10 @@ if result:
         )
 
         st.success(
-            f"「{st.session_state.searched_name}」を見つけました"
+            f"「{st.session_state.searched_name}」"
+            f"を見つけました"
         )
+
 
         result_name = properties.get(
             "name",
@@ -574,6 +535,7 @@ if result:
             ""
         )
 
+
         place_parts = [
             part
             for part in [
@@ -585,6 +547,7 @@ if result:
             ]
             if part
         ]
+
 
         st.write(
             "**場所**"
@@ -603,7 +566,8 @@ if result:
 
             if st.button(
                 "♡ 聖地に登録",
-                type="primary"
+                type="primary",
+                key="register_button"
             ):
 
                 try:
@@ -611,6 +575,7 @@ if result:
                     save_name = (
                         st.session_state.searched_name
                     )
+
 
                     existing = (
                         supabase
@@ -632,10 +597,12 @@ if result:
                         .execute()
                     )
 
+
                     if existing.data:
 
                         st.info(
-                            "この聖地はすでに登録されています ♡"
+                            "この聖地はすでに"
+                            "登録されています ♡"
                         )
 
                     else:
@@ -654,10 +621,10 @@ if result:
                         )
 
                         st.success(
-                            f"♡ 「{save_name}」を聖地に登録しました"
+                            f"♡ 「{save_name}」を"
+                            f"聖地に登録しました"
                         )
 
-                        st.rerun()
 
                 except Exception as e:
 
@@ -666,7 +633,8 @@ if result:
                     )
 
                     st.caption(
-                        f"エラー種類：{type(e).__name__}"
+                        f"エラー種類："
+                        f"{type(e).__name__}"
                     )
 
 
@@ -698,13 +666,16 @@ if supabase_connected:
             .execute()
         )
 
+
         seichi_list = response.data
+
 
         if not seichi_list:
 
             st.write(
                 "まだ聖地が登録されていません。"
             )
+
 
         else:
 
@@ -718,18 +689,36 @@ if supabase_connected:
                         [3, 1]
                     )
 
+
                     with col1:
 
                         st.markdown(
                             f"### ♡ {seichi['name']}"
                         )
 
+
                     with col2:
 
+                        selected_now = (
+                            st.session_state.selected_seichi
+                            and
+                            st.session_state.selected_seichi["id"]
+                            == seichi["id"]
+                        )
+
+
+                        button_label = (
+                            "選択中"
+                            if selected_now
+                            else "この聖地を選ぶ"
+                        )
+
+
                         if st.button(
-                            "この聖地を選ぶ",
+                            button_label,
                             key=f"select_{seichi['id']}",
-                            use_container_width=True
+                            use_container_width=True,
+                            disabled=selected_now
                         ):
 
                             st.session_state.selected_seichi = {
@@ -741,14 +730,17 @@ if supabase_connected:
 
                             st.rerun()
 
+
     except Exception as e:
 
         st.error(
-            "登録済みの聖地を読み込めませんでした"
+            "登録済みの聖地を"
+            "読み込めませんでした"
         )
 
         st.caption(
-            f"エラー種類：{type(e).__name__}"
+            f"エラー種類："
+            f"{type(e).__name__}"
         )
 
 
