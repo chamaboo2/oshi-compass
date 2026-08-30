@@ -1,9 +1,8 @@
 import streamlit as st
 import urllib.parse
 import urllib.request
+import urllib.error
 import json
-import time
-import threading
 
 
 st.set_page_config(
@@ -13,70 +12,46 @@ st.set_page_config(
 
 
 # =========================================
-# ジオコーディング
-# 場所名 → 緯度・経度
+# 場所検索
+# Photon：場所名 → 緯度・経度
 # =========================================
-
-class RateLimiter:
-    def __init__(self):
-        self.lock = threading.Lock()
-        self.last_request_time = 0.0
-
-
-@st.cache_resource
-def get_rate_limiter():
-    return RateLimiter()
-
 
 @st.cache_data(ttl=86400, show_spinner=False)
 def geocode_place(place_name):
 
-    limiter = get_rate_limiter()
+    params = urllib.parse.urlencode(
+        {
+            "q": place_name,
+            "lang": "ja",
+            "limit": 1,
+        }
+    )
 
-    with limiter.lock:
+    url = (
+        "https://photon.komoot.io/api/?"
+        + params
+    )
 
-        # Nominatimの利用制限に合わせて
-        # リクエスト間隔を最低1秒あける
-        elapsed = time.time() - limiter.last_request_time
+    request = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": "oshi-compass-prototype/1.0"
+        }
+    )
 
-        if elapsed < 1.0:
-            time.sleep(1.0 - elapsed)
+    with urllib.request.urlopen(
+        request,
+        timeout=15
+    ) as response:
 
-        params = urllib.parse.urlencode(
-            {
-                "q": place_name,
-                "format": "jsonv2",
-                "limit": 1,
-                "accept-language": "ja",
-            }
-        )
+        data = json.load(response)
 
-        url = (
-            "https://nominatim.openstreetmap.org/search?"
-            + params
-        )
+    features = data.get("features", [])
 
-        request = urllib.request.Request(
-            url,
-            headers={
-                "User-Agent": "oshi-compass-prototype/1.0",
-                "Accept-Language": "ja",
-            },
-        )
+    if not features:
+        return None
 
-        with urllib.request.urlopen(
-            request,
-            timeout=10
-        ) as response:
-
-            data = json.load(response)
-
-        limiter.last_request_time = time.time()
-
-    if data:
-        return data[0]
-
-    return None
+    return features[0]
 
 
 # =========================================
@@ -252,13 +227,37 @@ if st.button("検索"):
                 st.session_state.search_result = result
                 st.session_state.searched_name = place_name.strip()
 
-            except Exception:
+            except urllib.error.HTTPError as e:
+
+                st.session_state.search_result = None
+
+                st.error(
+                    f"検索サービスとの通信でエラーが発生しました。"
+                    f"（HTTP {e.code}）"
+                )
+
+            except urllib.error.URLError as e:
+
+                st.session_state.search_result = None
+
+                st.error(
+                    "検索サービスに接続できませんでした。"
+                )
+
+                st.caption(
+                    f"詳細：{e.reason}"
+                )
+
+            except Exception as e:
 
                 st.session_state.search_result = None
 
                 st.error(
                     "場所を検索できませんでした。"
-                    "少し時間をおいて、もう一度試してください。"
+                )
+
+                st.caption(
+                    f"詳細：{e}"
                 )
 
 
@@ -270,49 +269,78 @@ result = st.session_state.search_result
 
 if result:
 
-    st.divider()
+    geometry = result.get("geometry", {})
+    properties = result.get("properties", {})
 
-    st.subheader("検索結果")
-
-    st.success(
-        f"「{st.session_state.searched_name}」を見つけました"
+    coordinates = geometry.get(
+        "coordinates",
+        []
     )
 
-    st.write("**場所**")
+    if len(coordinates) >= 2:
 
-    st.write(
-        result["display_name"]
-    )
+        longitude = float(coordinates[0])
+        latitude = float(coordinates[1])
 
-    latitude = float(
-        result["lat"]
-    )
+        st.divider()
 
-    longitude = float(
-        result["lon"]
-    )
+        st.subheader("検索結果")
 
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.metric(
-            "緯度",
-            f"{latitude:.6f}"
+        st.success(
+            f"「{st.session_state.searched_name}」を見つけました"
         )
 
-    with col2:
-        st.metric(
-            "経度",
-            f"{longitude:.6f}"
+        name = properties.get(
+            "name",
+            st.session_state.searched_name
         )
+
+        city = properties.get("city", "")
+        district = properties.get("district", "")
+        state = properties.get("state", "")
+        country = properties.get("country", "")
+
+        place_parts = [
+            part
+            for part in [
+                name,
+                district,
+                city,
+                state,
+                country,
+            ]
+            if part
+        ]
+
+        st.write("**場所**")
+
+        st.write(
+            " / ".join(place_parts)
+        )
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            st.metric(
+                "緯度",
+                f"{latitude:.6f}"
+            )
+
+        with col2:
+
+            st.metric(
+                "経度",
+                f"{longitude:.6f}"
+            )
 
 
 # =========================================
-# OpenStreetMap表記
+# データ提供元
 # =========================================
 
 st.divider()
 
 st.caption(
-    "検索データ © OpenStreetMap contributors"
+    "検索データ：Photon / © OpenStreetMap contributors"
 )
