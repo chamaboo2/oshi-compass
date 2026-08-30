@@ -3,6 +3,7 @@ import urllib.parse
 import urllib.request
 import urllib.error
 import json
+import math
 
 from supabase import create_client
 from streamlit_geolocation import streamlit_geolocation
@@ -42,7 +43,6 @@ except Exception as e:
 
 # =========================================
 # 場所検索
-# Photon：場所名 → 緯度・経度
 # =========================================
 
 @st.cache_data(ttl=86400, show_spinner=False)
@@ -80,6 +80,43 @@ def geocode_place(place_name):
 
 
 # =========================================
+# 方位角を計算
+# =========================================
+
+def calculate_bearing(
+    start_latitude,
+    start_longitude,
+    destination_latitude,
+    destination_longitude
+):
+
+    lat1 = math.radians(start_latitude)
+    lat2 = math.radians(destination_latitude)
+
+    longitude_difference = math.radians(
+        destination_longitude - start_longitude
+    )
+
+    x = math.sin(longitude_difference) * math.cos(lat2)
+
+    y = (
+        math.cos(lat1) * math.sin(lat2)
+        - math.sin(lat1)
+        * math.cos(lat2)
+        * math.cos(longitude_difference)
+    )
+
+    bearing = math.degrees(
+        math.atan2(x, y)
+    )
+
+    # 0〜360度に直す
+    bearing = (bearing + 360) % 360
+
+    return bearing
+
+
+# =========================================
 # セッション状態
 # =========================================
 
@@ -94,6 +131,9 @@ if "selected_seichi" not in st.session_state:
 
 if "current_location" not in st.session_state:
     st.session_state.current_location = None
+
+if "bearing" not in st.session_state:
+    st.session_state.bearing = None
 
 
 # =========================================
@@ -231,7 +271,7 @@ st.write("好きな場所は、あっち！")
 
 # =========================================
 # Supabase接続状態
-# ※最終UI整理時に削除予定
+# 最終UI整理時に削除
 # =========================================
 
 if supabase_connected:
@@ -247,7 +287,7 @@ else:
 
 
 # =========================================
-# 現在選択している聖地
+# 現在の目的地
 # =========================================
 
 if st.session_state.selected_seichi:
@@ -273,6 +313,7 @@ st.write(
 
 location = streamlit_geolocation()
 
+
 if (
     isinstance(location, dict)
     and location.get("latitude") is not None
@@ -285,6 +326,7 @@ if (
         "accuracy": location.get("accuracy"),
     }
 
+
 if st.session_state.current_location:
 
     st.success(
@@ -295,6 +337,32 @@ else:
 
     st.caption(
         "まだ現在地は取得していません。"
+    )
+
+
+# =========================================
+# 現在地 → 聖地の方角を計算
+# =========================================
+
+if (
+    st.session_state.current_location
+    and st.session_state.selected_seichi
+):
+
+    current = st.session_state.current_location
+    destination = st.session_state.selected_seichi
+
+    bearing = calculate_bearing(
+        current["latitude"],
+        current["longitude"],
+        destination["latitude"],
+        destination["longitude"],
+    )
+
+    st.session_state.bearing = bearing
+
+    st.success(
+        f"🧭 {destination['name']}への方角を計算できました"
     )
 
 
@@ -327,7 +395,9 @@ if st.button("検索"):
 
     else:
 
-        with st.spinner("場所を探しています..."):
+        with st.spinner(
+            "場所を探しています..."
+        ):
 
             try:
 
@@ -378,8 +448,15 @@ result = st.session_state.search_result
 
 if result:
 
-    geometry = result.get("geometry", {})
-    properties = result.get("properties", {})
+    geometry = result.get(
+        "geometry",
+        {}
+    )
+
+    properties = result.get(
+        "properties",
+        {}
+    )
 
     coordinates = geometry.get(
         "coordinates",
@@ -388,12 +465,19 @@ if result:
 
     if len(coordinates) >= 2:
 
-        longitude = float(coordinates[0])
-        latitude = float(coordinates[1])
+        longitude = float(
+            coordinates[0]
+        )
+
+        latitude = float(
+            coordinates[1]
+        )
 
         st.divider()
 
-        st.subheader("検索結果")
+        st.subheader(
+            "検索結果"
+        )
 
         st.success(
             f"「{st.session_state.searched_name}」を見つけました"
@@ -404,10 +488,25 @@ if result:
             st.session_state.searched_name
         )
 
-        district = properties.get("district", "")
-        city = properties.get("city", "")
-        state = properties.get("state", "")
-        country = properties.get("country", "")
+        district = properties.get(
+            "district",
+            ""
+        )
+
+        city = properties.get(
+            "city",
+            ""
+        )
+
+        state = properties.get(
+            "state",
+            ""
+        )
+
+        country = properties.get(
+            "country",
+            ""
+        )
 
         place_parts = [
             part
@@ -421,14 +520,13 @@ if result:
             if part
         ]
 
-        st.write("**場所**")
+        st.write(
+            "**場所**"
+        )
 
         st.write(
             " / ".join(place_parts)
         )
-
-        # 緯度・経度は内部では保持するが
-        # ユーザー画面には表示しない
 
 
         # =================================
@@ -444,15 +542,26 @@ if result:
 
                 try:
 
-                    save_name = st.session_state.searched_name
+                    save_name = (
+                        st.session_state.searched_name
+                    )
 
                     existing = (
                         supabase
                         .table("seichi")
                         .select("id")
-                        .eq("name", save_name)
-                        .eq("latitude", latitude)
-                        .eq("longitude", longitude)
+                        .eq(
+                            "name",
+                            save_name
+                        )
+                        .eq(
+                            "latitude",
+                            latitude
+                        )
+                        .eq(
+                            "longitude",
+                            longitude
+                        )
                         .limit(1)
                         .execute()
                     )
@@ -501,7 +610,9 @@ if result:
 
 st.divider()
 
-st.subheader("♡ お気に入りの聖地")
+st.subheader(
+    "♡ お気に入りの聖地"
+)
 
 
 if supabase_connected:
@@ -533,7 +644,9 @@ if supabase_connected:
 
             for seichi in seichi_list:
 
-                with st.container(border=True):
+                with st.container(
+                    border=True
+                ):
 
                     col1, col2 = st.columns(
                         [3, 1]
@@ -559,6 +672,8 @@ if supabase_connected:
                                 "latitude": seichi["latitude"],
                                 "longitude": seichi["longitude"],
                             }
+
+                            st.session_state.bearing = None
 
                             st.rerun()
 
