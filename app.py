@@ -6,66 +6,133 @@ st.set_page_config(
 )
 
 # -------------------------
-# 夜モード
+# 夜モード切り替え
 # -------------------------
 night_mode = st.toggle("🌙 夜モード")
 
+
+# -------------------------
+# デザイン
+# -------------------------
 if night_mode:
-    st.markdown("""
-    <style>
-    .stApp {
-        background-color: #171724;
-        color: #f5f3ff;
-    }
+    st.markdown(
+        """
+        <style>
 
-    h1, h2, h3, p, label {
-        color: #f5f3ff !important;
-    }
+        /* 全体背景 */
+        .stApp {
+            background-color: #141827 !important;
+            color: #F5F7FF !important;
+        }
 
-    div[data-testid="stTextInput"] input {
-        background-color: #272738 !important;
-        color: #ffffff !important;
-        border: 2px solid #77738f !important;
-        border-radius: 12px !important;
-    }
+        /* 見出し・通常文字 */
+        h1, h2, h3, p, label {
+            color: #F5F7FF !important;
+        }
 
-    div[data-testid="stTextInput"] input::placeholder {
-        color: #aaa7ba !important;
-    }
+        /* 区切り線 */
+        hr {
+            border-color: #303A55 !important;
+        }
 
-    div[data-testid="stTextInput"] input:focus {
-        border: 2px solid #b5a7ff !important;
-    }
+        /* 入力欄 */
+        div[data-testid="stTextInput"] input {
+            background-color: #20283D !important;
+            color: #FFFFFF !important;
+            border: 2px solid #71809E !important;
+            border-radius: 12px !important;
+        }
 
-    div[data-testid="stButton"] button {
-        border-radius: 12px;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+        /* 入力欄の例文 */
+        div[data-testid="stTextInput"] input::placeholder {
+            color: #AEB9CC !important;
+        }
+
+        /* 入力中の枠 */
+        div[data-testid="stTextInput"] input:focus {
+            border: 2px solid #9FC5FF !important;
+            box-shadow: 0 0 0 1px #9FC5FF !important;
+        }
+
+        /* 検索ボタン */
+        .stButton button {
+            background-color: #294669 !important;
+            color: #FFFFFF !important;
+            border: 1px solid #7795BA !important;
+            border-radius: 12px !important;
+        }
+
+        /* ボタン内の文字 */
+        .stButton button p,
+        .stButton button span {
+            color: #FFFFFF !important;
+        }
+
+        /* マウスを乗せた検索ボタン */
+        .stButton button:hover {
+            background-color: #365A84 !important;
+            color: #FFFFFF !important;
+            border-color: #A3C2E6 !important;
+        }
+
+        /* ボタンを押した時 */
+        .stButton button:active {
+            background-color: #203A59 !important;
+            color: #FFFFFF !important;
+        }
+
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
 
 else:
-    st.markdown("""
-    <style>
-    div[data-testid="stTextInput"] input {
-        background-color: #ffffff !important;
-        color: #222222 !important;
-        border: 2px solid #9b9ba6 !important;
-        border-radius: 12px !important;
-    }
+    st.markdown(
+        """
+        <style>
 
-    div[data-testid="stTextInput"] input::placeholder {
-        color: #8b8b96 !important;
-    }
+        /* 入力欄 */
+        div[data-testid="stTextInput"] input {
+            background-color: #FFFFFF !important;
+            color: #222222 !important;
+            border: 2px solid #A0A6B2 !important;
+            border-radius: 12px !important;
+        }
 
-    div[data-testid="stTextInput"] input:focus {
-        border: 2px solid #6750a4 !important;
-    }
+        /* 入力欄の例文 */
+        div[data-testid="stTextInput"] input::placeholder {
+            color: #8B91A0 !important;
+        }
 
-    div[data-testid="stButton"] button {
-        border-radius: 12px;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+        /* 入力中の枠 */
+        div[data-testid="stTextInput"] input:focus {
+            border: 2px solid #607DA5 !important;
+            box-shadow: 0 0 0 1px #607DA5 !important;
+        }
+
+        /* 検索ボタン */
+        .stButton button {
+            background-color: #FFFFFF !important;
+            color: #222222 !important;
+            border: 1px solid #CDD1D8 !important;
+            border-radius: 12px !important;
+        }
+
+        .stButton button p,
+        .stButton button span {
+            color: #222222 !important;
+        }
+
+        /* マウスを乗せた検索ボタン */
+        .stButton button:hover {
+            background-color: #F3F5F8 !important;
+            border-color: #8D98A8 !important;
+        }
+
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
 
 
 # -------------------------
