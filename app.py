@@ -28,7 +28,6 @@ def get_supabase():
 try:
     supabase = get_supabase()
 
-    # seichiテーブルを読めるか確認
     supabase.table("seichi").select("id").limit(1).execute()
 
     supabase_connected = True
@@ -80,7 +79,7 @@ def geocode_place(place_name):
 
 
 # =========================================
-# 検索結果を保持
+# セッション状態
 # =========================================
 
 if "search_result" not in st.session_state:
@@ -338,7 +337,7 @@ if result:
             f"「{st.session_state.searched_name}」を見つけました"
         )
 
-        name = properties.get(
+        result_name = properties.get(
             "name",
             st.session_state.searched_name
         )
@@ -351,7 +350,7 @@ if result:
         place_parts = [
             part
             for part in [
-                name,
+                result_name,
                 district,
                 city,
                 state,
@@ -379,6 +378,69 @@ if result:
                 "経度",
                 f"{longitude:.6f}"
             )
+
+
+        # =================================
+        # 聖地登録
+        # =================================
+
+        if supabase_connected:
+
+            if st.button(
+                "♡ 聖地に登録",
+                type="primary"
+            ):
+
+                try:
+
+                    save_name = st.session_state.searched_name
+
+                    # 同じ場所がすでに登録されているか確認
+                    existing = (
+                        supabase
+                        .table("seichi")
+                        .select("id")
+                        .eq("name", save_name)
+                        .eq("latitude", latitude)
+                        .eq("longitude", longitude)
+                        .limit(1)
+                        .execute()
+                    )
+
+                    if existing.data:
+
+                        st.info(
+                            "この聖地はすでに登録されています ♡"
+                        )
+
+                    else:
+
+                        (
+                            supabase
+                            .table("seichi")
+                            .insert(
+                                {
+                                    "name": save_name,
+                                    "latitude": latitude,
+                                    "longitude": longitude,
+                                }
+                            )
+                            .execute()
+                        )
+
+                        st.success(
+                            f"♡ 「{save_name}」を聖地に登録しました"
+                        )
+
+                except Exception as e:
+
+                    st.error(
+                        "聖地を登録できませんでした"
+                    )
+
+                    st.caption(
+                        f"エラー種類：{type(e).__name__}"
+                    )
 
 
 # =========================================
