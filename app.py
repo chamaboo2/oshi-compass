@@ -80,7 +80,7 @@ def geocode_place(place_name):
 
 
 # =========================================
-# 方位角を計算
+# 方位角計算
 # =========================================
 
 def calculate_bearing(
@@ -97,7 +97,10 @@ def calculate_bearing(
         destination_longitude - start_longitude
     )
 
-    x = math.sin(longitude_difference) * math.cos(lat2)
+    x = (
+        math.sin(longitude_difference)
+        * math.cos(lat2)
+    )
 
     y = (
         math.cos(lat1) * math.sin(lat2)
@@ -110,10 +113,31 @@ def calculate_bearing(
         math.atan2(x, y)
     )
 
-    # 0〜360度に直す
-    bearing = (bearing + 360) % 360
+    return (bearing + 360) % 360
 
-    return bearing
+
+# =========================================
+# 方角名
+# =========================================
+
+def get_direction_name(bearing):
+
+    directions = [
+        "北",
+        "北東",
+        "東",
+        "南東",
+        "南",
+        "南西",
+        "西",
+        "北西",
+    ]
+
+    index = int(
+        (bearing + 22.5) // 45
+    ) % 8
+
+    return directions[index]
 
 
 # =========================================
@@ -131,9 +155,6 @@ if "selected_seichi" not in st.session_state:
 
 if "current_location" not in st.session_state:
     st.session_state.current_location = None
-
-if "bearing" not in st.session_state:
-    st.session_state.bearing = None
 
 
 # =========================================
@@ -179,7 +200,6 @@ if night_mode:
 
         div[data-testid="stTextInput"] input:focus {
             border: 2px solid #9FC5FF !important;
-            box-shadow: 0 0 0 1px #9FC5FF !important;
         }
 
         .stButton button {
@@ -197,7 +217,6 @@ if night_mode:
         .stButton button:hover {
             background-color: #365A84 !important;
             color: #FFFFFF !important;
-            border-color: #A3C2E6 !important;
         }
 
         div[data-testid="stVerticalBlockBorderWrapper"] {
@@ -229,7 +248,6 @@ else:
 
         div[data-testid="stTextInput"] input:focus {
             border: 2px solid #607DA5 !important;
-            box-shadow: 0 0 0 1px #607DA5 !important;
         }
 
         .stButton button {
@@ -246,7 +264,6 @@ else:
 
         .stButton button:hover {
             background-color: #F3F5F8 !important;
-            border-color: #8D98A8 !important;
         }
 
         div[data-testid="stVerticalBlockBorderWrapper"] {
@@ -270,7 +287,7 @@ st.write("好きな場所は、あっち！")
 
 
 # =========================================
-# Supabase接続状態
+# Supabase接続確認
 # 最終UI整理時に削除
 # =========================================
 
@@ -287,29 +304,12 @@ else:
 
 
 # =========================================
-# 現在の目的地
-# =========================================
-
-if st.session_state.selected_seichi:
-
-    selected = st.session_state.selected_seichi
-
-    st.info(
-        f"🧭 現在の目的地：{selected['name']}"
-    )
-
-
-# =========================================
-# 現在地取得
+# 現在地
 # =========================================
 
 st.divider()
 
 st.subheader("📍 現在地")
-
-st.write(
-    "下のボタンを押して、ブラウザの位置情報利用を許可してください。"
-)
 
 location = streamlit_geolocation()
 
@@ -336,12 +336,12 @@ if st.session_state.current_location:
 else:
 
     st.caption(
-        "まだ現在地は取得していません。"
+        "現在地を取得してください。"
     )
 
 
 # =========================================
-# 現在地 → 聖地の方角を計算
+# コンパス表示
 # =========================================
 
 if (
@@ -359,10 +359,57 @@ if (
         destination["longitude"],
     )
 
-    st.session_state.bearing = bearing
+    direction_name = get_direction_name(
+        bearing
+    )
 
-    st.success(
-        f"🧭 {destination['name']}への方角を計算できました"
+    bearing_display = round(bearing)
+
+    st.divider()
+
+    st.markdown(
+        f"""
+        <div style="
+            text-align:center;
+            padding:25px 10px 35px 10px;
+        ">
+
+            <div style="
+                font-size:26px;
+                font-weight:700;
+                margin-bottom:15px;
+            ">
+                {destination["name"]}はこっち！
+            </div>
+
+            <div style="
+                font-size:110px;
+                line-height:1;
+                transform:rotate({bearing}deg);
+                display:inline-block;
+                margin:15px;
+            ">
+                ↑
+            </div>
+
+            <div style="
+                font-size:28px;
+                font-weight:700;
+                margin-top:15px;
+            ">
+                {direction_name}　{bearing_display}°
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+elif st.session_state.current_location:
+
+    st.info(
+        "♡ お気に入りの聖地から目的地を選んでください"
     )
 
 
@@ -411,7 +458,6 @@ if st.button("検索"):
                 if result is None:
                     st.warning(
                         "場所が見つかりませんでした。"
-                        "別の名前でもう一度検索してください。"
                     )
 
             except urllib.error.HTTPError as e:
@@ -421,14 +467,6 @@ if st.button("検索"):
                 st.error(
                     f"検索サービスとの通信でエラーが発生しました。"
                     f"（HTTP {e.code}）"
-                )
-
-            except urllib.error.URLError:
-
-                st.session_state.search_result = None
-
-                st.error(
-                    "検索サービスに接続できませんでした。"
                 )
 
             except Exception:
@@ -529,10 +567,6 @@ if result:
         )
 
 
-        # =================================
-        # 聖地登録
-        # =================================
-
         if supabase_connected:
 
             if st.button(
@@ -605,7 +639,7 @@ if result:
 
 
 # =========================================
-# 登録済み聖地
+# お気に入り
 # =========================================
 
 st.divider()
@@ -672,8 +706,6 @@ if supabase_connected:
                                 "latitude": seichi["latitude"],
                                 "longitude": seichi["longitude"],
                             }
-
-                            st.session_state.bearing = None
 
                             st.rerun()
 
