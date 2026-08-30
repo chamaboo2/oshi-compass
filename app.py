@@ -900,72 +900,56 @@ if result:
 # =========================================
 # お気に入り
 # =========================================
-st.markdown("<div style=\"height:10px\"></div>", unsafe_allow_html=True)
+# =========================================
+# お気に入り
+# =========================================
+st.divider()
 
-st.subheader(
-    "♡ お気に入りの聖地"
-)
-
+st.subheader("♡ お気に入りの聖地")
 
 if supabase_connected:
     try:
         response = (
             supabase
             .table("seichi")
-            .select(
-                "id,name,latitude,"
-                "longitude,created_at"
-            )
-            .order(
-                "created_at",
-                desc=True,
-            )
+            .select("id,name,latitude,longitude,created_at")
+            .order("created_at", desc=True)
             .execute()
         )
 
-        if not response.data:
-            st.write(
-                "まだ聖地が"
-                "登録されていません。"
-            )
+        seichi_list = response.data or []
+
+        if not seichi_list:
+            st.info("まだ聖地が登録されていません。")
         else:
-            for seichi in response.data:
-                with st.container(border=True):
-                    st.markdown(
-                        f"### ♡ {seichi['name']}"
-                    )
+            for seichi in seichi_list:
+                selected_now = bool(
+                    st.session_state.selected_seichi
+                    and st.session_state.selected_seichi.get("id") == seichi["id"]
+                )
 
-                    selected_now = bool(
-                        st.session_state.selected_seichi
-                        and st.session_state.selected_seichi.get("id")
-                        == seichi["id"]
-                    )
+                if selected_now:
+                    button_label = f"♡ {seichi['name']}　✓ 選択中"
+                else:
+                    button_label = f"♡ {seichi['name']}"
 
-                    if st.button(
-                        "選択中" if selected_now else "この聖地を選ぶ",
-                        key=f"select_{seichi['id']}",
-                        use_container_width=True,
-                        disabled=selected_now,
-                    ):
-                        st.session_state.selected_seichi = {
-                            "id": seichi["id"],
-                            "name": seichi["name"],
-                            "latitude": seichi["latitude"],
-                            "longitude": seichi["longitude"],
-                        }
-
-                        st.rerun()
+                if st.button(
+                    button_label,
+                    key=f"favorite_{seichi['id']}",
+                    use_container_width=True,
+                    disabled=selected_now,
+                ):
+                    st.session_state.selected_seichi = {
+                        "id": seichi["id"],
+                        "name": seichi["name"],
+                        "latitude": seichi["latitude"],
+                        "longitude": seichi["longitude"],
+                    }
+                    st.rerun()
 
     except Exception as error:
-        st.error(
-            "登録済みの聖地を"
-            "読み込めませんでした"
-        )
-
-        st.caption(
-            f"エラー種類："
-            f"{type(error).__name__}"
-        )
+        st.error("登録済みの聖地を読み込めませんでした")
+        st.caption(f"エラー種類：{type(error).__name__}")
 
 
 st.divider()
