@@ -5,6 +5,7 @@ import urllib.error
 import json
 
 from supabase import create_client
+from streamlit_geolocation import streamlit_geolocation
 
 
 st.set_page_config(
@@ -90,6 +91,9 @@ if "searched_name" not in st.session_state:
 
 if "selected_seichi" not in st.session_state:
     st.session_state.selected_seichi = None
+
+if "current_location" not in st.session_state:
+    st.session_state.current_location = None
 
 
 # =========================================
@@ -227,6 +231,7 @@ st.write("好きな場所は、あっち！")
 
 # =========================================
 # Supabase接続状態
+# ※最終UI整理時に削除予定
 # =========================================
 
 if supabase_connected:
@@ -254,12 +259,50 @@ if st.session_state.selected_seichi:
     )
 
 
+# =========================================
+# 現在地取得
+# =========================================
+
 st.divider()
+
+st.subheader("📍 現在地")
+
+st.write(
+    "下のボタンを押して、ブラウザの位置情報利用を許可してください。"
+)
+
+location = streamlit_geolocation()
+
+if (
+    isinstance(location, dict)
+    and location.get("latitude") is not None
+    and location.get("longitude") is not None
+):
+
+    st.session_state.current_location = {
+        "latitude": float(location["latitude"]),
+        "longitude": float(location["longitude"]),
+        "accuracy": location.get("accuracy"),
+    }
+
+if st.session_state.current_location:
+
+    st.success(
+        "📍 現在地を取得できました"
+    )
+
+else:
+
+    st.caption(
+        "まだ現在地は取得していません。"
+    )
 
 
 # =========================================
 # 聖地検索
 # =========================================
+
+st.divider()
 
 st.subheader("聖地を探す")
 
@@ -310,7 +353,7 @@ if st.button("検索"):
                     f"（HTTP {e.code}）"
                 )
 
-            except urllib.error.URLError as e:
+            except urllib.error.URLError:
 
                 st.session_state.search_result = None
 
