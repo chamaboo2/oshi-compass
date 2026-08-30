@@ -88,6 +88,9 @@ if "search_result" not in st.session_state:
 if "searched_name" not in st.session_state:
     st.session_state.searched_name = ""
 
+if "selected_seichi" not in st.session_state:
+    st.session_state.selected_seichi = None
+
 
 # =========================================
 # 夜モード
@@ -153,6 +156,11 @@ if night_mode:
             border-color: #A3C2E6 !important;
         }
 
+        div[data-testid="stVerticalBlockBorderWrapper"] {
+            background-color: #1C2437 !important;
+            border-radius: 16px !important;
+        }
+
         </style>
         """,
         unsafe_allow_html=True
@@ -197,6 +205,11 @@ else:
             border-color: #8D98A8 !important;
         }
 
+        div[data-testid="stVerticalBlockBorderWrapper"] {
+            background-color: #FAFAFC !important;
+            border-radius: 16px !important;
+        }
+
         </style>
         """,
         unsafe_allow_html=True
@@ -228,7 +241,25 @@ else:
         )
 
 
+# =========================================
+# 現在選択している聖地
+# =========================================
+
+if st.session_state.selected_seichi:
+
+    selected = st.session_state.selected_seichi
+
+    st.info(
+        f"🧭 現在の目的地：{selected['name']}"
+    )
+
+
 st.divider()
+
+
+# =========================================
+# 聖地検索
+# =========================================
 
 st.subheader("聖地を探す")
 
@@ -242,10 +273,6 @@ place_name = st.text_input(
     label_visibility="collapsed"
 )
 
-
-# =========================================
-# 検索
-# =========================================
 
 if st.button("検索"):
 
@@ -291,20 +318,12 @@ if st.button("検索"):
                     "検索サービスに接続できませんでした。"
                 )
 
-                st.caption(
-                    f"詳細：{e.reason}"
-                )
-
-            except Exception as e:
+            except Exception:
 
                 st.session_state.search_result = None
 
                 st.error(
                     "場所を検索できませんでした。"
-                )
-
-                st.caption(
-                    f"詳細：{e}"
                 )
 
 
@@ -365,19 +384,8 @@ if result:
             " / ".join(place_parts)
         )
 
-        col1, col2 = st.columns(2)
-
-        with col1:
-            st.metric(
-                "緯度",
-                f"{latitude:.6f}"
-            )
-
-        with col2:
-            st.metric(
-                "経度",
-                f"{longitude:.6f}"
-            )
+        # 緯度・経度は内部では保持するが
+        # ユーザー画面には表示しない
 
 
         # =================================
@@ -395,7 +403,6 @@ if result:
 
                     save_name = st.session_state.searched_name
 
-                    # 同じ場所がすでに登録されているか確認
                     existing = (
                         supabase
                         .table("seichi")
@@ -432,6 +439,8 @@ if result:
                             f"♡ 「{save_name}」を聖地に登録しました"
                         )
 
+                        st.rerun()
+
                 except Exception as e:
 
                     st.error(
@@ -441,6 +450,84 @@ if result:
                     st.caption(
                         f"エラー種類：{type(e).__name__}"
                     )
+
+
+# =========================================
+# 登録済み聖地
+# =========================================
+
+st.divider()
+
+st.subheader("♡ お気に入りの聖地")
+
+
+if supabase_connected:
+
+    try:
+
+        response = (
+            supabase
+            .table("seichi")
+            .select(
+                "id,name,latitude,longitude,created_at"
+            )
+            .order(
+                "created_at",
+                desc=True
+            )
+            .execute()
+        )
+
+        seichi_list = response.data
+
+        if not seichi_list:
+
+            st.write(
+                "まだ聖地が登録されていません。"
+            )
+
+        else:
+
+            for seichi in seichi_list:
+
+                with st.container(border=True):
+
+                    col1, col2 = st.columns(
+                        [3, 1]
+                    )
+
+                    with col1:
+
+                        st.markdown(
+                            f"### ♡ {seichi['name']}"
+                        )
+
+                    with col2:
+
+                        if st.button(
+                            "この聖地を選ぶ",
+                            key=f"select_{seichi['id']}",
+                            use_container_width=True
+                        ):
+
+                            st.session_state.selected_seichi = {
+                                "id": seichi["id"],
+                                "name": seichi["name"],
+                                "latitude": seichi["latitude"],
+                                "longitude": seichi["longitude"],
+                            }
+
+                            st.rerun()
+
+    except Exception as e:
+
+        st.error(
+            "登録済みの聖地を読み込めませんでした"
+        )
+
+        st.caption(
+            f"エラー種類：{type(e).__name__}"
+        )
 
 
 # =========================================
