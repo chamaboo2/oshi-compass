@@ -19,6 +19,6 @@ place_name = st.text_input(
 
 if st.button("検索"):
     if place_name:
-        st.write(f「検索する場所：{place_name}」)
+        st.write(f"検索する場所：{place_name}")
     else:
         st.warning("場所の名前を入力してください")
