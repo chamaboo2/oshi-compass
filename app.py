@@ -4,6 +4,7 @@ import urllib.request
 import urllib.error
 import json
 import math
+import textwrap
 
 from supabase import create_client
 from streamlit_geolocation import streamlit_geolocation
@@ -229,6 +230,10 @@ if night_mode:
         unsafe_allow_html=True
     )
 
+    compass_text_color = "#F5F7FF"
+    compass_circle_color = "#20283D"
+    compass_border_color = "#71809E"
+
 else:
 
     st.markdown(
@@ -275,6 +280,10 @@ else:
         """,
         unsafe_allow_html=True
     )
+
+    compass_text_color = "#1F2937"
+    compass_circle_color = "#F7F8FB"
+    compass_border_color = "#CBD1DA"
 
 
 # =========================================
@@ -367,41 +376,60 @@ if (
 
     st.divider()
 
-    st.markdown(
+    compass_html = textwrap.dedent(
         f"""
         <div style="
-            text-align:center;
-            padding:25px 10px 35px 10px;
+            text-align: center;
+            padding: 20px 10px 35px 10px;
+            color: {compass_text_color};
         ">
 
             <div style="
-                font-size:26px;
-                font-weight:700;
-                margin-bottom:15px;
+                font-size: 27px;
+                font-weight: 700;
+                margin-bottom: 22px;
             ">
                 {destination["name"]}はこっち！
             </div>
 
             <div style="
-                font-size:110px;
-                line-height:1;
-                transform:rotate({bearing}deg);
-                display:inline-block;
-                margin:15px;
+                width: 190px;
+                height: 190px;
+                margin: 0 auto;
+                border-radius: 50%;
+                background: {compass_circle_color};
+                border: 3px solid {compass_border_color};
+                display: flex;
+                justify-content: center;
+                align-items: center;
             ">
-                ↑
+
+                <div style="
+                    font-size: 120px;
+                    line-height: 1;
+                    transform: rotate({bearing}deg);
+                    transform-origin: center center;
+                    display: inline-block;
+                ">
+                    ↑
+                </div>
+
             </div>
 
             <div style="
-                font-size:28px;
-                font-weight:700;
-                margin-top:15px;
+                font-size: 30px;
+                font-weight: 700;
+                margin-top: 22px;
             ">
                 {direction_name}　{bearing_display}°
             </div>
 
         </div>
-        """,
+        """
+    )
+
+    st.markdown(
+        compass_html,
         unsafe_allow_html=True
     )
 
@@ -566,6 +594,10 @@ if result:
             " / ".join(place_parts)
         )
 
+
+        # =================================
+        # 聖地登録
+        # =================================
 
         if supabase_connected:
 
