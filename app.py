@@ -4,11 +4,40 @@ import urllib.request
 import urllib.error
 import json
 
+from supabase import create_client
+
 
 st.set_page_config(
     page_title="おしコンパス",
     page_icon="🧭"
 )
+
+
+# =========================================
+# Supabase接続
+# =========================================
+
+@st.cache_resource
+def get_supabase():
+    return create_client(
+        st.secrets["SUPABASE_URL"],
+        st.secrets["SUPABASE_KEY"]
+    )
+
+
+try:
+    supabase = get_supabase()
+
+    # seichiテーブルを読めるか確認
+    supabase.table("seichi").select("id").limit(1).execute()
+
+    supabase_connected = True
+    supabase_error_type = ""
+
+except Exception as e:
+    supabase = None
+    supabase_connected = False
+    supabase_error_type = type(e).__name__
 
 
 # =========================================
@@ -40,7 +69,6 @@ def geocode_place(place_name):
         request,
         timeout=15
     ) as response:
-
         data = json.load(response)
 
     features = data.get("features", [])
@@ -183,6 +211,23 @@ else:
 st.title("おしコンパス 🧭")
 
 st.write("好きな場所は、あっち！")
+
+
+# =========================================
+# Supabase接続状態
+# =========================================
+
+if supabase_connected:
+    st.success("✅ Supabase接続OK")
+
+else:
+    st.error("Supabaseに接続できませんでした")
+
+    if supabase_error_type:
+        st.caption(
+            f"エラー種類：{supabase_error_type}"
+        )
+
 
 st.divider()
 
