@@ -116,45 +116,47 @@ night_mode = st.toggle("🌙 夜モード")
 
 if night_mode:
     c = {
-        "bg": "#12182B",
-        "text": "#F5F7FF",
-        "sub": "#C6CDEA",
-        "accent": "#FF8FB1",
-        "soft": "#2B3557",
-        "line": "#43507B",
-        "input": "#1D2742",
-        "input_border": "#7081B0",
-        "button": "#294669",
-        "button_border": "#6F93BF",
+        "bg": "#111827",
+        "text": "#F7F4F2",
+        "sub": "#B8BBC6",
+        "accent": "#D6A0AE",
+        "soft": "#1B2435",
+        "line": "#354057",
+        "input": "#182235",
+        "input_border": "#5B667E",
+        "button": "#26344D",
+        "button_border": "#66748F",
         "button_text": "#FFFFFF",
-        "card": "#18213A",
-        "card_border": "#35466F",
-        "dial": "#202B49",
-        "dial_border": "#7385B8",
-        "arrow": "#FFB3C8",
-        "badge": "#2A3557",
-        "selected": "#243150",
+        "card": "#171F30",
+        "card_border": "#303B50",
+        "dial": "#202A3D",
+        "dial_border": "#59667E",
+        "arrow": "#D79AAD",
+        "badge": "#2A2635",
+        "selected": "#252E42",
+        "success": "#7CB596",
     }
 else:
     c = {
-        "bg": "#FFFAFC",
-        "text": "#22304A",
-        "sub": "#6E7890",
-        "accent": "#EF7DA0",
-        "soft": "#FFF0F5",
-        "line": "#F3C8D6",
-        "input": "#FFFFFF",
-        "input_border": "#AAB4C8",
+        "bg": "#FAF7F5",
+        "text": "#263247",
+        "sub": "#777681",
+        "accent": "#B86B7D",
+        "soft": "#F3E9EB",
+        "line": "#E4D7DA",
+        "input": "#FFFEFD",
+        "input_border": "#CFC6C8",
         "button": "#FFFFFF",
-        "button_border": "#D7BFD0",
-        "button_text": "#22304A",
+        "button_border": "#D8CCCF",
+        "button_text": "#263247",
         "card": "#FFFFFF",
-        "card_border": "#EFD8E2",
-        "dial": "#FFF7FB",
-        "dial_border": "#E9CCD7",
-        "arrow": "#EF7DA0",
-        "badge": "#FFF0F5",
-        "selected": "#EEF5FF",
+        "card_border": "#E9E0E2",
+        "dial": "#FCF8F8",
+        "dial_border": "#DDC9CF",
+        "arrow": "#B76078",
+        "badge": "#F4E7EA",
+        "selected": "#F1EBE9",
+        "success": "#4F8B6A",
     }
 
 
@@ -166,56 +168,90 @@ st.markdown(
 .stApp {{
     background-color: {c["bg"]};
 }}
+
 .block-container {{
-    max-width: 820px;
-    padding-top: 1.6rem;
-    padding-bottom: 3rem;
+    max-width: 760px;
+    padding-top: 1.0rem;
+    padding-bottom: 2.4rem;
 }}
-h1,h2,h3,p,label {{
+
+h1, h2, h3, p, label {{
     color: {c["text"]};
 }}
+
+[data-testid="stToolbar"] {{
+    visibility: hidden;
+    height: 0;
+}}
+
+#MainMenu, footer {{
+    visibility: hidden;
+}}
+
 div[data-testid="stTextInput"] input {{
     background: {c["input"]} !important;
     color: {c["text"]} !important;
-    border: 2px solid {c["input_border"]} !important;
-    border-radius: 16px !important;
+    border: 1px solid {c["input_border"]} !important;
+    border-radius: 14px !important;
+    box-shadow: none !important;
 }}
+
+div[data-testid="stTextInput"] input:focus {{
+    border-color: {c["accent"]} !important;
+    box-shadow: 0 0 0 2px {c["soft"]} !important;
+}}
+
 div[data-testid="stTextInput"] input::placeholder {{
     color: {c["sub"]} !important;
 }}
-.stButton > button {{
+
+.stButton > button,
+.stFormSubmitButton > button {{
     background: {c["button"]} !important;
     color: {c["button_text"]} !important;
     border: 1px solid {c["button_border"]} !important;
-    border-radius: 16px !important;
+    border-radius: 14px !important;
     font-weight: 700 !important;
+    min-height: 44px;
 }}
-.stButton > button:hover {{
+
+.stButton > button:hover,
+.stFormSubmitButton > button:hover {{
     border-color: {c["accent"]} !important;
     color: {c["accent"]} !important;
 }}
+
 div[data-testid="stVerticalBlockBorderWrapper"] {{
     background: {c["card"]};
     border: 1px solid {c["card_border"]} !important;
-    border-radius: 22px !important;
+    border-radius: 18px !important;
+}}
+
+details {{
+    background: {c["card"]} !important;
+    border: 1px solid {c["card_border"]} !important;
+    border-radius: 16px !important;
+}}
+
+details summary {{
+    font-weight: 700 !important;
+}}
+
+hr {{
+    border-color: {c["line"]} !important;
 }}
 
 @media (max-width: 600px) {{
     .block-container {{
         max-width: 100%;
-        padding-top: 0.8rem;
-        padding-left: 0.9rem;
-        padding-right: 0.9rem;
-        padding-bottom: 2rem;
+        padding-top: 0.55rem;
+        padding-left: 0.85rem;
+        padding-right: 0.85rem;
+        padding-bottom: 1.8rem;
     }}
 
     div[data-testid="stVerticalBlock"] {{
-        gap: 0.55rem;
-    }}
-
-    .stButton > button {{
-        min-height: 44px;
-        font-size: 15px;
+        gap: 0.5rem;
     }}
 
     div[data-testid="stTextInput"] input {{
@@ -223,7 +259,6 @@ div[data-testid="stVerticalBlockBorderWrapper"] {{
         font-size: 16px;
     }}
 }}
-
 </style>""",
     unsafe_allow_html=True,
 )
@@ -238,14 +273,14 @@ COMPASS_HTML = """
   <div class="oshi-badge">おしの方向</div>
 
   <div class="oshi-title" data-role="title">
-    目的地はこっち！
+    目的地はこっち
   </div>
 
   <div class="oshi-dial">
     <div class="oshi-arrow" data-role="arrow">
-      <svg viewBox="0 0 100 100">
+      <svg viewBox="0 0 100 100" aria-hidden="true">
         <path
-          d="M50 5 L79 39 H63 V91 H37 V39 H21 Z"
+          d="M50 5 L69 39 L58 36 L58 91 L42 91 L42 36 L31 39 Z"
           fill="currentColor"
         ></path>
       </svg>
@@ -253,15 +288,17 @@ COMPASS_HTML = """
   </div>
 
   <div class="oshi-bearing" data-role="bearing">
-    —
+    現在地を確認中…
   </div>
 
+  <div class="oshi-distance" data-role="distance"></div>
+
   <button class="oshi-start" data-role="start">
-    おしコンパスを開始
+    コンパスをひらく
   </button>
 
   <div class="oshi-status" data-role="status">
-    スマホを水平に持って開始してください
+    位置情報とスマホの向きを使います
   </div>
 </div>
 """
@@ -273,8 +310,8 @@ COMPASS_CSS = """
     box-sizing: border-box;
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 28px;
-    padding: 30px 18px 24px 18px;
+    border-radius: 26px;
+    padding: 26px 18px 20px;
     text-align: center;
     color: var(--text);
 }
@@ -284,38 +321,41 @@ COMPASS_CSS = """
     background: var(--badge);
     border: 1px solid var(--line);
     border-radius: 999px;
-    padding: 8px 16px;
+    padding: 7px 14px;
     color: var(--accent);
-    font-size: 16px;
+    font-size: 13px;
     font-weight: 700;
-    margin-bottom: 18px;
+    letter-spacing: .04em;
+    margin-bottom: 14px;
 }
 
 .oshi-title {
-    font-size: 28px;
+    font-size: 27px;
+    line-height: 1.35;
     font-weight: 800;
-    margin-bottom: 22px;
+    margin-bottom: 20px;
 }
 
 .oshi-dial {
-    width: 230px;
-    height: 230px;
+    width: min(58vw, 230px);
+    height: min(58vw, 230px);
     margin: 0 auto;
     border-radius: 50%;
     background: var(--dial);
-    border: 4px solid var(--dial-border);
+    border: 2px solid var(--dial-border);
     display: flex;
     justify-content: center;
     align-items: center;
+    box-shadow: inset 0 0 0 9px rgba(255,255,255,.10);
 }
 
 .oshi-arrow {
-    width: 145px;
-    height: 145px;
+    width: 62%;
+    height: 62%;
     color: var(--arrow);
     transform: rotate(0deg);
     transform-origin: 50% 50%;
-    transition: transform 70ms linear;
+    transition: transform 80ms linear;
 }
 
 .oshi-arrow svg {
@@ -324,18 +364,26 @@ COMPASS_CSS = """
 }
 
 .oshi-bearing {
-    font-size: 32px;
+    font-size: 24px;
     font-weight: 800;
-    margin-top: 20px;
+    margin-top: 18px;
+}
+
+.oshi-distance {
+    min-height: 20px;
+    margin-top: 4px;
+    color: var(--sub);
+    font-size: 13px;
 }
 
 .oshi-start {
-    margin-top: 20px;
+    margin-top: 16px;
+    width: min(100%, 260px);
     border: 1px solid var(--button-border);
     background: var(--button);
     color: var(--button-text);
-    border-radius: 16px;
-    padding: 11px 18px;
+    border-radius: 999px;
+    padding: 12px 18px;
     font-size: 15px;
     font-weight: 700;
     cursor: pointer;
@@ -346,10 +394,25 @@ COMPASS_CSS = """
 }
 
 .oshi-status {
-    min-height: 22px;
+    min-height: 20px;
     margin-top: 10px;
-    font-size: 13px;
+    font-size: 12px;
     color: var(--sub);
+}
+
+@media (max-width: 480px) {
+    .oshi-card {
+        border-radius: 22px;
+        padding: 22px 14px 18px;
+    }
+
+    .oshi-title {
+        font-size: 24px;
+    }
+
+    .oshi-bearing {
+        font-size: 22px;
+    }
 }
 """
 
@@ -366,8 +429,9 @@ export default function(component) {
   const bearingText = q('[data-role="bearing"]');
   const start = q('[data-role="start"]');
   const status = q('[data-role="status"]');
+  const distanceText = q('[data-role="distance"]');
 
-  if (!card || !title || !arrow || !bearingText || !start || !status) {
+  if (!card || !title || !arrow || !bearingText || !start || !status || !distanceText) {
     return;
   }
 
@@ -389,8 +453,9 @@ export default function(component) {
   const destinationLat = Number(data.destination_latitude);
   const destinationLon = Number(data.destination_longitude);
 
-  title.textContent = `${destinationName}はこっち！`;
-  bearingText.textContent = "現在地を取得すると方角を表示";
+  title.textContent = `${destinationName}はこっち`;
+  bearingText.textContent = "現在地を確認中…";
+  distanceText.textContent = "";
 
   let started = false;
   let gotOrientation = false;
@@ -427,13 +492,43 @@ export default function(component) {
     return norm(toDeg(Math.atan2(x, y)));
   }
 
+  function calculateDistance(lat1Deg, lon1Deg, lat2Deg, lon2Deg) {
+    const earthRadiusKm = 6371;
+    const dLat = toRad(lat2Deg - lat1Deg);
+    const dLon = toRad(lon2Deg - lon1Deg);
+    const lat1 = toRad(lat1Deg);
+    const lat2 = toRad(lat2Deg);
+
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2)
+      + Math.cos(lat1) * Math.cos(lat2)
+      * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+    const distanceKm =
+      earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return distanceKm;
+  }
+
+  function formatDistance(distanceKm) {
+    if (distanceKm < 1) {
+      return `約 ${Math.max(1, Math.round(distanceKm * 1000))} m`;
+    }
+
+    if (distanceKm < 10) {
+      return `約 ${distanceKm.toFixed(1)} km`;
+    }
+
+    return `約 ${Math.round(distanceKm)} km`;
+  }
+
   function applyCompass() {
     if (destinationBearing === null) {
       return;
     }
 
     bearingText.textContent =
-      `目的地：${direction(destinationBearing)} ${Math.round(destinationBearing)}°`;
+      `${direction(destinationBearing)} · ${Math.round(destinationBearing)}°`;
 
     if (currentHeading === null) {
       arrow.style.transform = `rotate(${destinationBearing}deg)`;
@@ -446,7 +541,7 @@ export default function(component) {
 
   function refreshStatus() {
     if (!gotLocation && !gotOrientation) {
-      status.textContent = "現在地と方位を取得しています…";
+      status.textContent = "現在地と向きを確認しています…";
       status.style.color = "";
       return;
     }
@@ -464,7 +559,7 @@ export default function(component) {
     }
 
     if (gotAbsolute) {
-      status.textContent = "✓ おしの方向を追跡中";
+      status.textContent = "✓ 方向を追跡中";
       status.style.color = "#2F9B63";
     } else {
       status.textContent =
@@ -536,6 +631,15 @@ export default function(component) {
       destinationLon
     );
 
+    const distanceKm = calculateDistance(
+      latitude,
+      longitude,
+      destinationLat,
+      destinationLon
+    );
+
+    distanceText.textContent = formatDistance(distanceKm);
+
     gotLocation = true;
     applyCompass();
     refreshStatus();
@@ -588,7 +692,7 @@ export default function(component) {
 
       started = true;
       start.style.display = "none";
-      status.textContent = "現在地と方位を取得しています…";
+      status.textContent = "現在地と向きを確認しています…";
 
       window.addEventListener(
         "deviceorientationabsolute",
@@ -668,21 +772,23 @@ except Exception:
 # タイトル
 # =========================================
 title_html = (
-    f'<div style="background:{c["soft"]};'
-    f'border:1px solid {c["line"]};'
-    f'border-radius:22px;'
-    f'padding:18px 20px;'
-    f'margin-bottom:10px;">'
-    f'<div style="font-size:38px;'
+    f'<div style="padding:10px 2px 14px;">'
+    f'<div style="font-size:13px;'
+    f'font-weight:700;'
+    f'letter-spacing:.12em;'
+    f'color:{c["accent"]};'
+    f'margin-bottom:5px;">OSHI COMPASS</div>'
+    f'<div style="font-size:36px;'
     f'line-height:1.15;'
     f'font-weight:800;'
     f'color:{c["text"]};">'
     f'おしコンパス 🧭'
     f'</div>'
-    f'<div style="margin-top:6px;'
-    f'font-size:17px;'
-    f'font-weight:700;'
-    f'color:{c["accent"]};">'
+    f'<div style="margin-top:8px;'
+    f'font-size:15px;'
+    f'line-height:1.6;'
+    f'font-weight:600;'
+    f'color:{c["sub"]};">'
     f'足を向けて寝ちゃだめな場所、みっけ！'
     f'</div>'
     f'</div>'
@@ -697,36 +803,6 @@ st.markdown(
 if not supabase_connected:
     st.error(
         "データベースに接続できませんでした"
-    )
-
-
-# =========================================
-# 現在の目的地
-# =========================================
-if st.session_state.selected_seichi:
-    selected_name = html.escape(
-        str(
-            st.session_state
-            .selected_seichi["name"]
-        )
-    )
-
-    selected_html = (
-        f'<div style="background:{c["selected"]};'
-        f'border:1px solid {c["line"]};'
-        f'border-radius:18px;'
-        f'padding:10px 14px;'
-        f'margin-bottom:8px;'
-        f'font-size:16px;'
-        f'font-weight:700;'
-        f'color:{c["text"]};">'
-        f'🧭 現在の目的地：{selected_name}'
-        f'</div>'
-    )
-
-    st.markdown(
-        selected_html,
-        unsafe_allow_html=True,
     )
 
 
@@ -763,210 +839,146 @@ if st.session_state.selected_seichi:
     else:
         st.error("おしコンパスを読み込めませんでした")
 else:
-    st.info("お気に入りの聖地から目的地を選んでください")
+    st.info("下の「♡ 好きな場所」から、コンパスで指したい場所を選んでください。")
 
 
 # =========================================
-# 聖地検索
+# 好きな場所を追加
 # =========================================
-st.markdown("<div style=\"height:4px\"></div>", unsafe_allow_html=True)
+st.markdown("<div style=\"height:6px\"></div>", unsafe_allow_html=True)
 
-st.markdown("### 🔎 聖地を探す")
-
-st.caption("行きたい場所・好きな場所を入力")
-
-place_name = st.text_input(
-    "場所を入力",
-    placeholder=
-        "ここに入力　例：東京タワー、東京駅、秋葉原",
-    label_visibility="collapsed",
-)
-
-
-if st.button(
-    "検索",
-    key="search_button",
-):
-    if not place_name.strip():
-        st.warning(
-            "場所の名前を入力してください"
+with st.expander("＋ 好きな場所を追加", expanded=False):
+    with st.form("place_search_form", clear_on_submit=False):
+        place_name = st.text_input(
+            "場所の名前",
+            placeholder="例：東京タワー、東京駅、代々木公園",
         )
-    else:
-        with st.spinner(
-            "場所を探しています..."
-        ):
-            try:
-                result = geocode_place(
-                    place_name.strip()
-                )
-
-                st.session_state.search_result = (
-                    result
-                )
-
-                st.session_state.searched_name = (
-                    place_name.strip()
-                )
-
-                if result is None:
-                    st.warning(
-                        "場所が見つかりませんでした"
-                    )
-
-            except urllib.error.HTTPError as error:
-                st.session_state.search_result = None
-
-                st.error(
-                    f"検索サービスとの通信エラー"
-                    f"（HTTP {error.code}）"
-                )
-
-            except Exception:
-                st.session_state.search_result = None
-
-                st.error(
-                    "場所を検索できませんでした"
-                )
-
-
-# =========================================
-# 検索結果
-# =========================================
-result = st.session_state.search_result
-
-if result:
-    geometry = result.get(
-        "geometry",
-        {},
-    )
-
-    properties = result.get(
-        "properties",
-        {},
-    )
-
-    coordinates = geometry.get(
-        "coordinates",
-        [],
-    )
-
-    if len(coordinates) >= 2:
-        longitude = float(
-            coordinates[0]
+        search_submitted = st.form_submit_button(
+            "場所を探す",
+            use_container_width=True,
         )
 
-        latitude = float(
-            coordinates[1]
-        )
-
-        result_name = properties.get(
-            "name",
-            st.session_state.searched_name,
-        )
-
-        place_parts = [
-            part
-            for part in [
-                result_name,
-                properties.get("district", ""),
-                properties.get("city", ""),
-                properties.get("state", ""),
-                properties.get("country", ""),
-            ]
-            if part
-        ]
-
-        st.divider()
-
-        st.subheader(
-            "検索結果"
-        )
-
-        with st.container(
-            border=True
-        ):
-            st.success(
-                f"「"
-                f"{st.session_state.searched_name}"
-                f"」を見つけました"
-            )
-
-            st.markdown(
-                f"### 📍 "
-                f"{st.session_state.searched_name}"
-            )
-
-            st.caption(
-                " / ".join(
-                    place_parts
-                )
-            )
-
-            if (
-                supabase_connected
-                and st.button(
-                    "♡ 聖地に登録",
-                    type="primary",
-                    key="register_button",
-                )
-            ):
+    if search_submitted:
+        if not place_name.strip():
+            st.warning("場所の名前を入力してください。")
+        else:
+            with st.spinner("探しています…"):
                 try:
-                    save_name = (
-                        st.session_state
-                        .searched_name
-                    )
+                    result = geocode_place(place_name.strip())
+                    st.session_state.search_result = result
+                    st.session_state.searched_name = place_name.strip()
 
-                    existing = (
-                        supabase
-                        .table("seichi")
-                        .select("id")
-                        .eq("latitude", latitude)
-                        .eq("longitude", longitude)
-                        .limit(1)
-                        .execute()
-                    )
-
-                    if existing.data:
-                        st.info(
-                            "この聖地はすでに"
-                            "登録されています ♡"
-                        )
-                    else:
-                        (
-                            supabase
-                            .table("seichi")
-                            .insert(
-                                {
-                                    "name": save_name,
-                                    "latitude": latitude,
-                                    "longitude": longitude,
-                                }
-                            )
-                            .execute()
-                        )
-
-                        st.success(
-                            f"♡ 「{save_name}」を"
-                            f"聖地に登録しました"
-                        )
-
-                except Exception as error:
+                    if result is None:
+                        st.warning("場所が見つかりませんでした。")
+                except urllib.error.HTTPError as error:
+                    st.session_state.search_result = None
                     st.error(
-                        "聖地を登録できませんでした"
+                        f"検索サービスとの通信エラー（HTTP {error.code}）"
                     )
+                except Exception:
+                    st.session_state.search_result = None
+                    st.error("場所を検索できませんでした。")
 
-                    st.caption(
-                        f"エラー種類："
-                        f"{type(error).__name__}"
-                    )
+    result = st.session_state.search_result
+
+    if result:
+        geometry = result.get("geometry", {})
+        properties = result.get("properties", {})
+        coordinates = geometry.get("coordinates", [])
+
+        if len(coordinates) >= 2:
+            longitude = float(coordinates[0])
+            latitude = float(coordinates[1])
+
+            result_name = properties.get(
+                "name",
+                st.session_state.searched_name,
+            )
+
+            place_parts = [
+                part
+                for part in [
+                    result_name,
+                    properties.get("district", ""),
+                    properties.get("city", ""),
+                    properties.get("state", ""),
+                    properties.get("country", ""),
+                ]
+                if part
+            ]
+
+            with st.container(border=True):
+                st.markdown(
+                    f"**📍 {st.session_state.searched_name}**"
+                )
+                st.caption(" / ".join(place_parts))
+
+                if supabase_connected:
+                    if st.button(
+                        "♡ 好きな場所に追加",
+                        key="register_button",
+                        use_container_width=True,
+                    ):
+                        try:
+                            existing = (
+                                supabase
+                                .table("seichi")
+                                .select("id,name,latitude,longitude")
+                                .eq("latitude", latitude)
+                                .eq("longitude", longitude)
+                                .limit(1)
+                                .execute()
+                            )
+
+                            if existing.data:
+                                row = existing.data[0]
+                                st.session_state.selected_seichi = {
+                                    "id": row["id"],
+                                    "name": row["name"],
+                                    "latitude": row["latitude"],
+                                    "longitude": row["longitude"],
+                                }
+                                st.session_state.search_result = None
+                                st.rerun()
+
+                            save_name = st.session_state.searched_name
+
+                            inserted = (
+                                supabase
+                                .table("seichi")
+                                .insert(
+                                    {
+                                        "name": save_name,
+                                        "latitude": latitude,
+                                        "longitude": longitude,
+                                    }
+                                )
+                                .execute()
+                            )
+
+                            if inserted.data:
+                                row = inserted.data[0]
+                                st.session_state.selected_seichi = {
+                                    "id": row["id"],
+                                    "name": row["name"],
+                                    "latitude": row["latitude"],
+                                    "longitude": row["longitude"],
+                                }
+
+                            st.session_state.search_result = None
+                            st.rerun()
+
+                        except Exception as error:
+                            st.error("好きな場所に追加できませんでした。")
+                            st.caption(
+                                f"エラー種類：{type(error).__name__}"
+                            )
 
 
 # =========================================
-# お気に入り
+# 好きな場所
 # =========================================
-st.divider()
-
-st.markdown("### ♡ お気に入りの聖地")
+st.markdown("<div style=\"height:2px\"></div>", unsafe_allow_html=True)
 
 if supabase_connected:
     try:
@@ -980,97 +992,98 @@ if supabase_connected:
 
         seichi_list = response.data or []
 
-        if not seichi_list:
-            st.info("まだ聖地が登録されていません。")
-        else:
-            for seichi in seichi_list:
-                selected_now = bool(
-                    st.session_state.selected_seichi
-                    and st.session_state.selected_seichi.get("id") == seichi["id"]
+        with st.expander(
+            f"♡ 好きな場所  {len(seichi_list)}",
+            expanded=st.session_state.selected_seichi is None,
+        ):
+            if not seichi_list:
+                st.caption(
+                    "まだ登録がありません。「＋ 好きな場所を追加」から追加できます。"
                 )
+            else:
+                for seichi in seichi_list:
+                    selected_now = bool(
+                        st.session_state.selected_seichi
+                        and st.session_state.selected_seichi.get("id")
+                        == seichi["id"]
+                    )
 
-                with st.container(border=True):
-                    if selected_now:
-                        st.markdown(f"#### ♡ {seichi['name']}　✓ 選択中")
-                    else:
-                        st.markdown(f"#### ♡ {seichi['name']}")
+                    with st.container(border=True):
+                        if selected_now:
+                            st.markdown(f"**♡ {seichi['name']}**")
+                            st.caption("✓ コンパスで表示中")
+                        else:
+                            st.markdown(f"**♡ {seichi['name']}**")
 
-                    if not selected_now:
-                        if st.button(
-                            "この場所を選ぶ",
-                            key=f"favorite_{seichi['id']}",
-                            use_container_width=True,
-                        ):
-                            st.session_state.selected_seichi = {
-                                "id": seichi["id"],
-                                "name": seichi["name"],
-                                "latitude": seichi["latitude"],
-                                "longitude": seichi["longitude"],
-                            }
-                            st.rerun()
-
-                    with st.expander("✏️ 名前を変更"):
-                        with st.form(
-                            key=f"rename_form_{seichi['id']}",
-                            clear_on_submit=False,
-                        ):
-                            new_name = st.text_input(
-                                "新しい名前",
-                                value=seichi["name"],
-                                key=f"rename_input_{seichi['id']}",
-                            )
-
-                            rename_submitted = st.form_submit_button(
-                                "名前を保存",
+                            if st.button(
+                                "この場所を指す",
+                                key=f"favorite_{seichi['id']}",
                                 use_container_width=True,
-                            )
+                            ):
+                                st.session_state.selected_seichi = {
+                                    "id": seichi["id"],
+                                    "name": seichi["name"],
+                                    "latitude": seichi["latitude"],
+                                    "longitude": seichi["longitude"],
+                                }
+                                st.rerun()
 
-                        if rename_submitted:
-                            cleaned_name = new_name.strip()
+                        with st.expander("名前を編集"):
+                            with st.form(
+                                key=f"rename_form_{seichi['id']}",
+                                clear_on_submit=False,
+                            ):
+                                new_name = st.text_input(
+                                    "表示する名前",
+                                    value=seichi["name"],
+                                    key=f"rename_input_{seichi['id']}",
+                                )
 
-                            if not cleaned_name:
-                                st.warning("新しい名前を入力してください。")
-                            elif cleaned_name == seichi["name"]:
-                                st.info("名前は変更されていません。")
-                            else:
-                                try:
-                                    (
-                                        supabase
-                                        .table("seichi")
-                                        .update({"name": cleaned_name})
-                                        .eq("id", seichi["id"])
-                                        .execute()
-                                    )
+                                rename_submitted = st.form_submit_button(
+                                    "保存",
+                                    use_container_width=True,
+                                )
 
-                                    if selected_now:
-                                        st.session_state.selected_seichi = {
-                                            "id": seichi["id"],
-                                            "name": cleaned_name,
-                                            "latitude": seichi["latitude"],
-                                            "longitude": seichi["longitude"],
-                                        }
+                            if rename_submitted:
+                                cleaned_name = new_name.strip()
 
-                                    st.success(
-                                        f"「{seichi['name']}」を「{cleaned_name}」に変更しました。"
-                                    )
-                                    st.rerun()
+                                if not cleaned_name:
+                                    st.warning("名前を入力してください。")
+                                elif cleaned_name == seichi["name"]:
+                                    st.info("名前は変更されていません。")
+                                else:
+                                    try:
+                                        (
+                                            supabase
+                                            .table("seichi")
+                                            .update({"name": cleaned_name})
+                                            .eq("id", seichi["id"])
+                                            .execute()
+                                        )
 
-                                except Exception as error:
-                                    st.error("名前を変更できませんでした。")
-                                    st.caption(
-                                        "SupabaseのRLSでUPDATEが許可されているかも確認してください。"
-                                    )
-                                    st.caption(
-                                        f"エラー種類：{type(error).__name__}"
-                                    )
+                                        if selected_now:
+                                            st.session_state.selected_seichi = {
+                                                "id": seichi["id"],
+                                                "name": cleaned_name,
+                                                "latitude": seichi["latitude"],
+                                                "longitude": seichi["longitude"],
+                                            }
+
+                                        st.rerun()
+
+                                    except Exception as error:
+                                        st.error("名前を変更できませんでした。")
+                                        st.caption(
+                                            "SupabaseのRLSでUPDATEが許可されているか確認してください。"
+                                        )
+                                        st.caption(
+                                            f"エラー種類：{type(error).__name__}"
+                                        )
 
     except Exception as error:
-        st.error("登録済みの聖地を読み込めませんでした")
+        st.error("好きな場所を読み込めませんでした。")
         st.caption(f"エラー種類：{type(error).__name__}")
 
 
-st.divider()
-
-st.caption(
-    "検索データ：Photon / © OpenStreetMap contributors"
-)
+st.markdown("<div style=\"height:8px\"></div>", unsafe_allow_html=True)
+st.caption("地図データ：Photon / © OpenStreetMap contributors")
