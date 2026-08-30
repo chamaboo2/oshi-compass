@@ -1,6 +1,7 @@
 import html
 import json
 import math
+import textwrap
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -14,6 +15,13 @@ st.set_page_config(
     page_icon="🧭",
     layout="centered",
 )
+
+
+def render_html(markup):
+    st.markdown(
+        textwrap.dedent(markup).strip(),
+        unsafe_allow_html=True,
+    )
 
 
 # =========================================
@@ -37,7 +45,7 @@ except Exception:
 
 
 # =========================================
-# 場所名 → 緯度経度
+# 場所検索
 # =========================================
 @st.cache_data(ttl=86400, show_spinner=False)
 def geocode_place(place_name):
@@ -68,46 +76,44 @@ def geocode_place(place_name):
 
 
 # =========================================
-# 方位
+# 方位計算
 # 北=0 / 東=90 / 南=180 / 西=270
 # =========================================
 def calculate_bearing(
-    lat1_deg,
-    lon1_deg,
-    lat2_deg,
-    lon2_deg,
+    lat1,
+    lon1,
+    lat2,
+    lon2,
 ):
-    lat1 = math.radians(lat1_deg)
-    lat2 = math.radians(lat2_deg)
+    p1 = math.radians(lat1)
+    p2 = math.radians(lat2)
 
-    dlon = math.radians(
-        lon2_deg - lon1_deg
+    dl = math.radians(
+        lon2 - lon1
     )
 
     x = (
-        math.sin(dlon)
-        * math.cos(lat2)
+        math.sin(dl)
+        * math.cos(p2)
     )
 
     y = (
-        math.cos(lat1)
-        * math.sin(lat2)
-        - math.sin(lat1)
-        * math.cos(lat2)
-        * math.cos(dlon)
-    )
-
-    bearing = math.degrees(
-        math.atan2(x, y)
+        math.cos(p1)
+        * math.sin(p2)
+        - math.sin(p1)
+        * math.cos(p2)
+        * math.cos(dl)
     )
 
     return (
-        bearing + 360
+        math.degrees(
+            math.atan2(x, y)
+        )
+        + 360
     ) % 360
 
 
-def get_direction_name(bearing):
-
+def direction_name(bearing):
     names = [
         "北",
         "北東",
@@ -129,7 +135,7 @@ def get_direction_name(bearing):
 
 
 # =========================================
-# 状態
+# セッション状態
 # =========================================
 for key, default in {
     "search_result": None,
@@ -143,7 +149,7 @@ for key, default in {
 
 
 # =========================================
-# 夜モード
+# 配色
 # =========================================
 night_mode = st.toggle(
     "🌙 夜モード"
@@ -152,7 +158,7 @@ night_mode = st.toggle(
 
 if night_mode:
 
-    colors = {
+    c = {
         "bg": "#12182B",
         "text": "#F5F7FF",
         "sub": "#C6CDEA",
@@ -180,9 +186,10 @@ if night_mode:
         "selected": "#243150",
     }
 
+
 else:
 
-    colors = {
+    c = {
         "bg": "#FFFAFC",
         "text": "#22304A",
         "sub": "#6E7890",
@@ -212,21 +219,26 @@ else:
 
 
 # =========================================
-# 全体デザイン
+# 共通デザイン
 # =========================================
-st.markdown(
+render_html(
     f"""
     <style>
 
     .stApp {{
-        background-color:
-            {colors["bg"]};
+        background:
+            {c["bg"]};
     }}
 
     .block-container {{
-        max-width: 820px;
-        padding-top: 1.6rem;
-        padding-bottom: 3rem;
+        max-width:
+            820px;
+
+        padding-top:
+            1.6rem;
+
+        padding-bottom:
+            3rem;
     }}
 
     h1,
@@ -236,21 +248,21 @@ st.markdown(
     div,
     label {{
         color:
-            {colors["text"]};
+            {c["text"]};
     }}
 
     div[data-testid="stTextInput"] input {{
         background:
-            {colors["input"]}
+            {c["input"]}
             !important;
 
         color:
-            {colors["text"]}
+            {c["text"]}
             !important;
 
         border:
             2px solid
-            {colors["input_border"]}
+            {c["input_border"]}
             !important;
 
         border-radius:
@@ -261,22 +273,22 @@ st.markdown(
     div[data-testid="stTextInput"]
     input::placeholder {{
         color:
-            {colors["sub"]}
+            {c["sub"]}
             !important;
     }}
 
     .stButton > button {{
         background:
-            {colors["button"]}
+            {c["button"]}
             !important;
 
         color:
-            {colors["button_text"]}
+            {c["button_text"]}
             !important;
 
         border:
             1px solid
-            {colors["button_border"]}
+            {c["button_border"]}
             !important;
 
         border-radius:
@@ -290,24 +302,21 @@ st.markdown(
 
     .stButton > button:hover {{
         border-color:
-            {colors["accent"]}
+            {c["accent"]}
             !important;
 
         color:
-            {colors["accent"]}
+            {c["accent"]}
             !important;
     }}
 
-    div[
-        data-testid=
-        "stVerticalBlockBorderWrapper"
-    ] {{
+    div[data-testid="stVerticalBlockBorderWrapper"] {{
         background:
-            {colors["card"]};
+            {c["card"]};
 
         border:
             1px solid
-            {colors["card_border"]}
+            {c["card_border"]}
             !important;
 
         border-radius:
@@ -316,16 +325,13 @@ st.markdown(
     }}
 
     </style>
-    """,
-    unsafe_allow_html=True,
+    """
 )
 
 
 # =========================================
-# STEP 12
-# スマートフォン方位センサー
+# STEP 12 方位センサー Component
 # =========================================
-
 ORIENTATION_HTML = """
 <div class="sensor-card">
 
@@ -365,16 +371,7 @@ ORIENTATION_HTML = """
       <svg viewBox="0 0 100 100">
 
         <path
-          d="
-            M50 6
-            L78 40
-            H62
-            V90
-            H38
-            V40
-            H22
-            Z
-          "
+          d="M50 6 L78 40 H62 V90 H38 V40 H22 Z"
           fill="currentColor"
         >
         </path>
@@ -428,6 +425,7 @@ ORIENTATION_CSS = """
         var(--text);
 }
 
+
 .sensor-title {
     font-size:
         23px;
@@ -439,6 +437,7 @@ ORIENTATION_CSS = """
         4px;
 }
 
+
 .sensor-description {
     font-size:
         14px;
@@ -449,6 +448,7 @@ ORIENTATION_CSS = """
     margin-bottom:
         16px;
 }
+
 
 .sensor-start {
     border:
@@ -477,10 +477,12 @@ ORIENTATION_CSS = """
         pointer;
 }
 
+
 .sensor-start:disabled {
     opacity:
         .65;
 }
+
 
 .sensor-status {
     min-height:
@@ -495,6 +497,7 @@ ORIENTATION_CSS = """
     font-weight:
         700;
 }
+
 
 .sensor-dial {
     width:
@@ -520,6 +523,7 @@ ORIENTATION_CSS = """
         var(--dial-bg);
 }
 
+
 .north-label {
     position:
         absolute;
@@ -539,6 +543,7 @@ ORIENTATION_CSS = """
     font-size:
         14px;
 }
+
 
 .sensor-needle {
     position:
@@ -566,6 +571,7 @@ ORIENTATION_CSS = """
         50% 50%;
 }
 
+
 .sensor-needle svg {
     width:
         100%;
@@ -573,6 +579,7 @@ ORIENTATION_CSS = """
     height:
         100%;
 }
+
 
 .sensor-heading {
     font-size:
@@ -584,6 +591,7 @@ ORIENTATION_CSS = """
     margin-top:
         8px;
 }
+
 
 .sensor-source {
     margin-top:
@@ -607,10 +615,12 @@ export default function(component) {
   } = component;
 
 
-  const q = (selector) =>
-    parentElement.querySelector(
-      selector
-    );
+  const q =
+    (selector) =>
+      parentElement
+      .querySelector(
+        selector
+      );
 
 
   const card =
@@ -696,21 +706,29 @@ export default function(component) {
   );
 
 
-  let started = false;
-  let gotEvent = false;
-  let gotAbsolute = false;
-  let timer = null;
+  let started =
+    false;
+
+  let gotEvent =
+    false;
+
+  let gotAbsolute =
+    false;
+
+  let timer =
+    null;
 
 
-  const norm = (value) =>
-    (
+  const norm =
+    (value) =>
       (
-        value
-        % 360
+        (
+          value
+          % 360
+        )
+        + 360
       )
-      + 360
-    )
-    % 360;
+      % 360;
 
 
   const directions = [
@@ -725,19 +743,21 @@ export default function(component) {
   ];
 
 
-  const direction = (value) =>
+  const direction =
+    (value) =>
 
-    directions[
+      directions[
 
-      Math.floor(
-        (
-          value
-          + 22.5
+        Math.floor(
+          (
+            value
+            + 22.5
+          )
+          / 45
         )
-        / 45
-      )
-      % 8
-    ];
+
+        % 8
+      ];
 
 
   function extract(
@@ -789,14 +809,14 @@ export default function(component) {
 
     const absolute =
       event.absolute
-        ===
-        true
+      ===
+      true
 
       ||
 
       event.type
-        ===
-        "deviceorientationabsolute";
+      ===
+      "deviceorientationabsolute";
 
 
     return {
@@ -947,8 +967,8 @@ export default function(component) {
         typeof
           DeviceOrientationEvent
           .requestPermission
-          ===
-          "function"
+        ===
+        "function"
       ) {
 
         let permission;
@@ -1101,21 +1121,22 @@ try:
 
 except Exception:
 
-    orientation_component = None
+    orientation_component =
+        None
 
 
 # =========================================
 # タイトル
 # =========================================
-st.markdown(
+render_html(
     f"""
     <div style="
         background:
-            {colors["soft"]};
+            {c["soft"]};
 
         border:
             1px solid
-            {colors["line"]};
+            {c["line"]};
 
         border-radius:
             24px;
@@ -1127,42 +1148,41 @@ st.markdown(
             18px;
     ">
 
-      <div style="
-          font-size:
-              48px;
+        <div style="
+            font-size:
+                48px;
 
-          font-weight:
-              800;
+            font-weight:
+                800;
 
-          color:
-              {colors["text"]};
-      ">
-        おしコンパス 🧭
-      </div>
+            color:
+                {c["text"]};
+        ">
+            おしコンパス 🧭
+        </div>
 
-      <div style="
-          margin-top:
-              8px;
+        <div style="
+            margin-top:
+                8px;
 
-          font-size:
-              24px;
+            font-size:
+                24px;
 
-          font-weight:
-              700;
+            font-weight:
+                700;
 
-          color:
-              {colors["accent"]};
-      ">
-        好きな場所は、あっち！
-      </div>
+            color:
+                {c["accent"]};
+        ">
+            好きな場所は、あっち！
+        </div>
 
     </div>
-    """,
-    unsafe_allow_html=True,
+    """
 )
 
 
-# 接続OKは表示しない
+# Supabase接続OKは表示しない
 if not supabase_connected:
 
     st.error(
@@ -1175,23 +1195,26 @@ if not supabase_connected:
 # =========================================
 if st.session_state.selected_seichi:
 
-    selected_name = html.escape(
-        str(
-            st.session_state
-            .selected_seichi["name"]
+    selected_name =
+        html.escape(
+            str(
+                st.session_state
+                .selected_seichi[
+                    "name"
+                ]
+            )
         )
-    )
 
 
-    st.markdown(
+    render_html(
         f"""
         <div style="
             background:
-                {colors["selected"]};
+                {c["selected"]};
 
             border:
                 1px solid
-                {colors["line"]};
+                {c["line"]};
 
             border-radius:
                 18px;
@@ -1209,12 +1232,11 @@ if st.session_state.selected_seichi:
                 700;
 
             color:
-                {colors["text"]};
+                {c["text"]};
         ">
-          🧭 現在の目的地：{selected_name}
+            🧭 現在の目的地：{selected_name}
         </div>
-        """,
-        unsafe_allow_html=True,
+        """
     )
 
 
@@ -1258,12 +1280,16 @@ if (
 
         "latitude":
             float(
-                location["latitude"]
+                location[
+                    "latitude"
+                ]
             ),
 
         "longitude":
             float(
-                location["longitude"]
+                location[
+                    "longitude"
+                ]
             ),
 
         "accuracy":
@@ -1287,7 +1313,7 @@ else:
 
 
 # =========================================
-# 目的地の方角
+# 聖地への方角
 # =========================================
 if (
     st.session_state.current_location
@@ -1297,41 +1323,42 @@ if (
     st.session_state.selected_seichi
 ):
 
-    current = (
-        st.session_state
-        .current_location
-    )
+    current =
+        st.session_state.current_location
 
 
-    destination = (
-        st.session_state
-        .selected_seichi
-    )
+    destination =
+        st.session_state.selected_seichi
 
 
-    bearing = calculate_bearing(
-        current["latitude"],
-        current["longitude"],
-        destination["latitude"],
-        destination["longitude"],
-    )
-
-
-    direction_name = (
-        get_direction_name(
-            bearing
+    bearing =
+        calculate_bearing(
+            current[
+                "latitude"
+            ],
+            current[
+                "longitude"
+            ],
+            destination[
+                "latitude"
+            ],
+            destination[
+                "longitude"
+            ],
         )
-    )
 
 
-    safe_name = html.escape(
-        str(
-            destination["name"]
+    safe_name =
+        html.escape(
+            str(
+                destination[
+                    "name"
+                ]
+            )
         )
-    )
 
 
-    # 真上向き矢印。
+    # この矢印は最初から真上向き。
     # 0° = 北
     # 90° = 東
 
@@ -1339,11 +1366,15 @@ if (
 
         f'<svg '
         f'viewBox="0 0 100 100" '
+
         f'style="'
         f'width:145px;'
         f'height:145px;'
-        f'transform:rotate({bearing:.2f}deg);'
-        f'transform-origin:50% 50%;'
+        f'transform:rotate('
+        f'{bearing:.2f}deg'
+        f');'
+        f'transform-origin:'
+        f'50% 50%;'
         f'">'
 
         f'<path '
@@ -1359,7 +1390,7 @@ if (
         f'" '
 
         f'fill="'
-        f'{colors["arrow"]}'
+        f'{c["arrow"]}'
         f'">'
 
         f'</path>'
@@ -1371,8 +1402,9 @@ if (
     compass_html = (
 
         f'<div style="'
-        f'background:{colors["card"]};'
-        f'border:1px solid {colors["card_border"]};'
+        f'background:{c["card"]};'
+        f'border:1px solid '
+        f'{c["card_border"]};'
         f'border-radius:28px;'
         f'padding:30px 18px;'
         f'margin:24px 0;'
@@ -1381,13 +1413,14 @@ if (
 
         f'<div style="'
         f'display:inline-block;'
-        f'background:{colors["badge"]};'
-        f'border:1px solid {colors["line"]};'
+        f'background:{c["badge"]};'
+        f'border:1px solid '
+        f'{c["line"]};'
         f'border-radius:999px;'
         f'padding:8px 16px;'
         f'font-size:16px;'
         f'font-weight:700;'
-        f'color:{colors["accent"]};'
+        f'color:{c["accent"]};'
         f'margin-bottom:18px;'
         f'">'
 
@@ -1398,7 +1431,7 @@ if (
         f'<div style="'
         f'font-size:28px;'
         f'font-weight:800;'
-        f'color:{colors["text"]};'
+        f'color:{c["text"]};'
         f'margin-bottom:20px;'
         f'">'
 
@@ -1411,8 +1444,9 @@ if (
         f'height:230px;'
         f'margin:0 auto;'
         f'border-radius:50%;'
-        f'background:{colors["dial"]};'
-        f'border:4px solid {colors["dial_border"]};'
+        f'background:{c["dial"]};'
+        f'border:4px solid '
+        f'{c["dial_border"]};'
         f'display:flex;'
         f'justify-content:center;'
         f'align-items:center;'
@@ -1425,11 +1459,12 @@ if (
         f'<div style="'
         f'font-size:34px;'
         f'font-weight:800;'
-        f'color:{colors["text"]};'
+        f'color:{c["text"]};'
         f'margin-top:22px;'
         f'">'
 
-        f'{direction_name}　'
+        f'{direction_name(bearing)}'
+        f'　'
         f'{round(bearing)}°'
 
         f'</div>'
@@ -1438,14 +1473,14 @@ if (
     )
 
 
-    st.markdown(
-        compass_html,
-        unsafe_allow_html=True,
+    render_html(
+        compass_html
     )
 
 
 # =========================================
 # STEP 12
+# スマートフォン方位
 # =========================================
 st.divider()
 
@@ -1455,8 +1490,9 @@ st.subheader(
 
 
 st.caption(
-    "Androidでは画面を縦向きにし、"
-    "スマホを水平に持って試してください。"
+    "Androidでは画面を縦向きにして、"
+    "スマートフォンを水平に持って"
+    "試してください。"
 )
 
 
@@ -1470,25 +1506,25 @@ if orientation_component is not None:
         data={
 
             "card_background":
-                colors["card"],
+                c["card"],
 
             "card_border":
-                colors["card_border"],
+                c["card_border"],
 
             "text_color":
-                colors["text"],
+                c["text"],
 
             "button_background":
-                colors["button"],
+                c["button"],
 
             "button_text":
-                colors["button_text"],
+                c["button_text"],
 
             "compass_background":
-                colors["dial"],
+                c["dial"],
 
             "compass_arrow":
-                colors["arrow"],
+                c["arrow"],
         },
 
         width=
@@ -1523,27 +1559,30 @@ st.markdown(
 )
 
 
-place_name = st.text_input(
-    "場所を入力",
+place_name =
+    st.text_input(
+        "場所を入力",
 
-    placeholder=
-        "ここに入力　例："
-        "東京タワー、東京駅、秋葉原",
+        placeholder=
+            "ここに入力　例："
+            "東京タワー、東京駅、秋葉原",
 
-    label_visibility=
-        "collapsed",
-)
+        label_visibility=
+            "collapsed",
+    )
 
 
 if st.button(
     "検索",
-    key="search_button",
+    key=
+        "search_button"
 ):
 
     if not place_name.strip():
 
         st.warning(
-            "場所の名前を入力してください"
+            "場所の名前を"
+            "入力してください"
         )
 
 
@@ -1555,21 +1594,18 @@ if st.button(
 
             try:
 
-                result = (
+                result =
                     geocode_place(
                         place_name.strip()
                     )
-                )
 
 
-                st.session_state.search_result = (
+                st.session_state.search_result =
                     result
-                )
 
 
-                st.session_state.searched_name = (
+                st.session_state.searched_name =
                     place_name.strip()
-                )
 
 
                 if result is None:
@@ -1581,22 +1617,23 @@ if st.button(
 
             except urllib.error.HTTPError as error:
 
-                st.session_state.search_result = (
+                st.session_state.search_result =
                     None
-                )
 
 
                 st.error(
-                    f"検索サービスとの通信エラー"
-                    f"（HTTP {error.code}）"
+                    f"検索サービスとの"
+                    f"通信エラー"
+                    f"（HTTP "
+                    f"{error.code}"
+                    f"）"
                 )
 
 
             except Exception:
 
-                st.session_state.search_result = (
+                st.session_state.search_result =
                     None
-                )
 
 
                 st.error(
@@ -1607,49 +1644,59 @@ if st.button(
 # =========================================
 # 検索結果
 # =========================================
-result = (
-    st.session_state
-    .search_result
-)
+result =
+    st.session_state.search_result
 
 
 if result:
 
-    geometry = result.get(
-        "geometry",
-        {}
-    )
-
-
-    properties = result.get(
-        "properties",
-        {}
-    )
-
-
-    coordinates = geometry.get(
-        "coordinates",
-        []
-    )
-
-
-    if len(coordinates) >= 2:
-
-        longitude = float(
-            coordinates[0]
+    geometry =
+        result.get(
+            "geometry",
+            {}
         )
 
 
-        latitude = float(
-            coordinates[1]
+    properties =
+        result.get(
+            "properties",
+            {}
         )
 
 
-        result_name = properties.get(
-            "name",
-            st.session_state
-            .searched_name,
+    coordinates =
+        geometry.get(
+            "coordinates",
+            []
         )
+
+
+    if len(
+        coordinates
+    ) >= 2:
+
+        longitude =
+            float(
+                coordinates[
+                    0
+                ]
+            )
+
+
+        latitude =
+            float(
+                coordinates[
+                    1
+                ]
+            )
+
+
+        result_name =
+            properties.get(
+                "name",
+                st.session_state
+                .searched_name
+            )
 
 
         place_parts = [
@@ -1693,7 +1740,8 @@ if result:
 
 
         with st.container(
-            border=True
+            border=
+                True
         ):
 
             st.success(
@@ -1723,17 +1771,20 @@ if result:
 
                 st.button(
                     "♡ 聖地に登録",
-                    type="primary",
-                    key="register_button",
+
+                    type=
+                        "primary",
+
+                    key=
+                        "register_button",
                 )
             ):
 
                 try:
 
-                    save_name = (
+                    save_name =
                         st.session_state
                         .searched_name
-                    )
 
 
                     existing = (
@@ -1798,14 +1849,16 @@ if result:
                         st.success(
                             f"♡ 「"
                             f"{save_name}"
-                            f"」を聖地に登録しました"
+                            f"」を聖地に"
+                            f"登録しました"
                         )
 
 
                 except Exception as error:
 
                     st.error(
-                        "聖地を登録できませんでした"
+                        "聖地を登録"
+                        "できませんでした"
                     )
 
 
@@ -1841,7 +1894,8 @@ if supabase_connected:
             )
             .order(
                 "created_at",
-                desc=True,
+                desc=
+                    True
             )
             .execute()
         )
@@ -1860,14 +1914,17 @@ if supabase_connected:
             for seichi in response.data:
 
                 with st.container(
-                    border=True
+                    border=
+                        True
                 ):
 
-                    col1, col2 = (
+                    col1, col2 =
                         st.columns(
-                            [3, 1]
+                            [
+                                3,
+                                1,
+                            ]
                         )
-                    )
 
 
                     with col1:
@@ -1880,23 +1937,26 @@ if supabase_connected:
 
                     with col2:
 
-                        selected_now = bool(
+                        selected_now =
+                            bool(
 
-                            st.session_state
-                            .selected_seichi
+                                st.session_state
+                                .selected_seichi
 
-                            and
+                                and
 
-                            st.session_state
-                            .selected_seichi
-                            .get(
-                                "id"
+                                st.session_state
+                                .selected_seichi
+                                .get(
+                                    "id"
+                                )
+
+                                ==
+
+                                seichi[
+                                    "id"
+                                ]
                             )
-
-                            ==
-
-                            seichi["id"]
-                        )
 
 
                         if st.button(
@@ -1920,16 +1980,24 @@ if supabase_connected:
                             st.session_state.selected_seichi = {
 
                                 "id":
-                                    seichi["id"],
+                                    seichi[
+                                        "id"
+                                    ],
 
                                 "name":
-                                    seichi["name"],
+                                    seichi[
+                                        "name"
+                                    ],
 
                                 "latitude":
-                                    seichi["latitude"],
+                                    seichi[
+                                        "latitude"
+                                    ],
 
                                 "longitude":
-                                    seichi["longitude"],
+                                    seichi[
+                                        "longitude"
+                                    ],
                             }
 
 
