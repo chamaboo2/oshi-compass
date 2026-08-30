@@ -22,20 +22,17 @@ def geocode_place(place_name):
     params = urllib.parse.urlencode(
         {
             "q": place_name,
-            "lang": "ja",
             "limit": 1,
         }
     )
 
-    url = (
-        "https://photon.komoot.io/api/?"
-        + params
-    )
+    url = "https://photon.komoot.io/api/?" + params
 
     request = urllib.request.Request(
         url,
         headers={
-            "User-Agent": "oshi-compass-prototype/1.0"
+            "User-Agent": "oshi-compass-prototype/1.0",
+            "Accept-Language": "ja,en;q=0.8",
         }
     )
 
@@ -227,6 +224,12 @@ if st.button("検索"):
                 st.session_state.search_result = result
                 st.session_state.searched_name = place_name.strip()
 
+                if result is None:
+                    st.warning(
+                        "場所が見つかりませんでした。"
+                        "別の名前でもう一度検索してください。"
+                    )
+
             except urllib.error.HTTPError as e:
 
                 st.session_state.search_result = None
@@ -295,8 +298,8 @@ if result:
             st.session_state.searched_name
         )
 
-        city = properties.get("city", "")
         district = properties.get("district", "")
+        city = properties.get("city", "")
         state = properties.get("state", "")
         country = properties.get("country", "")
 
@@ -321,14 +324,12 @@ if result:
         col1, col2 = st.columns(2)
 
         with col1:
-
             st.metric(
                 "緯度",
                 f"{latitude:.6f}"
             )
 
         with col2:
-
             st.metric(
                 "経度",
                 f"{longitude:.6f}"
