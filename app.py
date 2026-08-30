@@ -103,6 +103,7 @@ for key, default in {
     "search_result": None,
     "searched_name": "",
     "selected_seichi": None,
+    "night_mode": False,
 }.items():
     if key not in st.session_state:
         st.session_state[key] = default
@@ -111,7 +112,7 @@ for key, default in {
 # =========================================
 # 夜モード
 # =========================================
-night_mode = st.toggle("🌙 夜モード")
+night_mode = bool(st.session_state.night_mode)
 
 
 if night_mode:
@@ -771,8 +772,11 @@ except Exception:
 # =========================================
 # タイトル
 # =========================================
+# =========================================
+# タイトル
+# =========================================
 title_html = (
-    f'<div style="padding:10px 2px 14px;">'
+    f'<div style="padding:10px 2px 10px;">'
     f'<div style="font-size:13px;'
     f'font-weight:700;'
     f'letter-spacing:.12em;'
@@ -799,17 +803,28 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# 夜モードはトップ画面でもコンパス画面でも常に見える位置に置く
+st.toggle(
+    "🌙 夜モード",
+    key="night_mode",
+)
 
 if not supabase_connected:
-    st.error(
-        "データベースに接続できませんでした"
-    )
+    st.error("データベースに接続できませんでした")
 
 
 # =========================================
-# おしコンパス本体
+# コンパス画面
 # =========================================
 if st.session_state.selected_seichi:
+    if st.button(
+        "← トップに戻る",
+        key="back_to_top",
+    ):
+        st.session_state.selected_seichi = None
+        st.session_state.search_result = None
+        st.rerun()
+
     destination = st.session_state.selected_seichi
 
     if realtime_compass is not None:
@@ -838,185 +853,186 @@ if st.session_state.selected_seichi:
         )
     else:
         st.error("おしコンパスを読み込めませんでした")
+
+
+# =========================================
+# トップ画面
+# =========================================
 else:
-    st.info("下の「♡ 好きな場所」から、コンパスで指したい場所を選んでください。")
+    st.info(
+        "下の「♡ 好きな場所」から、コンパスで指したい場所を選んでください。"
+    )
 
+    st.markdown(
+        '<div style="height:6px"></div>',
+        unsafe_allow_html=True,
+    )
 
-# =========================================
-# 好きな場所を追加
-# =========================================
-st.markdown("<div style=\"height:6px\"></div>", unsafe_allow_html=True)
-
-with st.expander("＋ 好きな場所を追加", expanded=False):
-    with st.form("place_search_form", clear_on_submit=False):
-        place_name = st.text_input(
-            "場所の名前",
-            placeholder="例：東京タワー、東京駅、代々木公園",
-        )
-        search_submitted = st.form_submit_button(
-            "場所を探す",
-            use_container_width=True,
-        )
-
-    if search_submitted:
-        if not place_name.strip():
-            st.warning("場所の名前を入力してください。")
-        else:
-            with st.spinner("探しています…"):
-                try:
-                    result = geocode_place(place_name.strip())
-                    st.session_state.search_result = result
-                    st.session_state.searched_name = place_name.strip()
-
-                    if result is None:
-                        st.warning("場所が見つかりませんでした。")
-                except urllib.error.HTTPError as error:
-                    st.session_state.search_result = None
-                    st.error(
-                        f"検索サービスとの通信エラー（HTTP {error.code}）"
-                    )
-                except Exception:
-                    st.session_state.search_result = None
-                    st.error("場所を検索できませんでした。")
-
-    result = st.session_state.search_result
-
-    if result:
-        geometry = result.get("geometry", {})
-        properties = result.get("properties", {})
-        coordinates = geometry.get("coordinates", [])
-
-        if len(coordinates) >= 2:
-            longitude = float(coordinates[0])
-            latitude = float(coordinates[1])
-
-            result_name = properties.get(
-                "name",
-                st.session_state.searched_name,
+    # -----------------------------------------
+    # 好きな場所を追加
+    # -----------------------------------------
+    with st.expander("＋ 好きな場所を追加", expanded=False):
+        with st.form("place_search_form", clear_on_submit=False):
+            place_name = st.text_input(
+                "場所の名前",
+                placeholder="例：東京タワー、東京駅、代々木公園",
+            )
+            search_submitted = st.form_submit_button(
+                "場所を探す",
+                use_container_width=True,
             )
 
-            place_parts = [
-                part
-                for part in [
-                    result_name,
-                    properties.get("district", ""),
-                    properties.get("city", ""),
-                    properties.get("state", ""),
-                    properties.get("country", ""),
-                ]
-                if part
-            ]
+        if search_submitted:
+            if not place_name.strip():
+                st.warning("場所の名前を入力してください。")
+            else:
+                with st.spinner("探しています…"):
+                    try:
+                        result = geocode_place(place_name.strip())
+                        st.session_state.search_result = result
+                        st.session_state.searched_name = place_name.strip()
 
-            with st.container(border=True):
-                st.markdown(
-                    f"**📍 {st.session_state.searched_name}**"
+                        if result is None:
+                            st.warning("場所が見つかりませんでした。")
+                    except urllib.error.HTTPError as error:
+                        st.session_state.search_result = None
+                        st.error(
+                            f"検索サービスとの通信エラー（HTTP {error.code}）"
+                        )
+                    except Exception:
+                        st.session_state.search_result = None
+                        st.error("場所を検索できませんでした。")
+
+        result = st.session_state.search_result
+
+        if result:
+            geometry = result.get("geometry", {})
+            properties = result.get("properties", {})
+            coordinates = geometry.get("coordinates", [])
+
+            if len(coordinates) >= 2:
+                longitude = float(coordinates[0])
+                latitude = float(coordinates[1])
+
+                result_name = properties.get(
+                    "name",
+                    st.session_state.searched_name,
                 )
-                st.caption(" / ".join(place_parts))
 
-                if supabase_connected:
-                    if st.button(
-                        "♡ 好きな場所に追加",
-                        key="register_button",
-                        use_container_width=True,
-                    ):
-                        try:
-                            existing = (
-                                supabase
-                                .table("seichi")
-                                .select("id,name,latitude,longitude")
-                                .eq("latitude", latitude)
-                                .eq("longitude", longitude)
-                                .limit(1)
-                                .execute()
-                            )
+                place_parts = [
+                    part
+                    for part in [
+                        result_name,
+                        properties.get("district", ""),
+                        properties.get("city", ""),
+                        properties.get("state", ""),
+                        properties.get("country", ""),
+                    ]
+                    if part
+                ]
 
-                            if existing.data:
-                                row = existing.data[0]
-                                st.session_state.selected_seichi = {
-                                    "id": row["id"],
-                                    "name": row["name"],
-                                    "latitude": row["latitude"],
-                                    "longitude": row["longitude"],
-                                }
+                with st.container(border=True):
+                    st.markdown(
+                        f"**📍 {st.session_state.searched_name}**"
+                    )
+                    st.caption(" / ".join(place_parts))
+
+                    if supabase_connected:
+                        if st.button(
+                            "♡ 好きな場所に追加",
+                            key="register_button",
+                            use_container_width=True,
+                        ):
+                            try:
+                                existing = (
+                                    supabase
+                                    .table("seichi")
+                                    .select("id,name,latitude,longitude")
+                                    .eq("latitude", latitude)
+                                    .eq("longitude", longitude)
+                                    .limit(1)
+                                    .execute()
+                                )
+
+                                if existing.data:
+                                    row = existing.data[0]
+                                    st.session_state.selected_seichi = {
+                                        "id": row["id"],
+                                        "name": row["name"],
+                                        "latitude": row["latitude"],
+                                        "longitude": row["longitude"],
+                                    }
+                                    st.session_state.search_result = None
+                                    st.rerun()
+
+                                save_name = st.session_state.searched_name
+
+                                inserted = (
+                                    supabase
+                                    .table("seichi")
+                                    .insert(
+                                        {
+                                            "name": save_name,
+                                            "latitude": latitude,
+                                            "longitude": longitude,
+                                        }
+                                    )
+                                    .execute()
+                                )
+
+                                if inserted.data:
+                                    row = inserted.data[0]
+                                    st.session_state.selected_seichi = {
+                                        "id": row["id"],
+                                        "name": row["name"],
+                                        "latitude": row["latitude"],
+                                        "longitude": row["longitude"],
+                                    }
+
                                 st.session_state.search_result = None
                                 st.rerun()
 
-                            save_name = st.session_state.searched_name
-
-                            inserted = (
-                                supabase
-                                .table("seichi")
-                                .insert(
-                                    {
-                                        "name": save_name,
-                                        "latitude": latitude,
-                                        "longitude": longitude,
-                                    }
+                            except Exception as error:
+                                st.error("好きな場所に追加できませんでした。")
+                                st.caption(
+                                    f"エラー種類：{type(error).__name__}"
                                 )
-                                .execute()
-                            )
 
-                            if inserted.data:
-                                row = inserted.data[0]
-                                st.session_state.selected_seichi = {
-                                    "id": row["id"],
-                                    "name": row["name"],
-                                    "latitude": row["latitude"],
-                                    "longitude": row["longitude"],
-                                }
+    # -----------------------------------------
+    # 好きな場所
+    # -----------------------------------------
+    st.markdown(
+        '<div style="height:2px"></div>',
+        unsafe_allow_html=True,
+    )
 
-                            st.session_state.search_result = None
-                            st.rerun()
+    if supabase_connected:
+        try:
+            response = (
+                supabase
+                .table("seichi")
+                .select("id,name,latitude,longitude,created_at")
+                .order("created_at", desc=True)
+                .execute()
+            )
 
-                        except Exception as error:
-                            st.error("好きな場所に追加できませんでした。")
-                            st.caption(
-                                f"エラー種類：{type(error).__name__}"
-                            )
+            seichi_list = response.data or []
 
-
-# =========================================
-# 好きな場所
-# =========================================
-st.markdown("<div style=\"height:2px\"></div>", unsafe_allow_html=True)
-
-if supabase_connected:
-    try:
-        response = (
-            supabase
-            .table("seichi")
-            .select("id,name,latitude,longitude,created_at")
-            .order("created_at", desc=True)
-            .execute()
-        )
-
-        seichi_list = response.data or []
-
-        with st.expander(
-            f"♡ 好きな場所  {len(seichi_list)}",
-            expanded=st.session_state.selected_seichi is None,
-        ):
-            if not seichi_list:
-                st.caption(
-                    "まだ登録がありません。「＋ 好きな場所を追加」から追加できます。"
-                )
-            else:
-                for seichi in seichi_list:
-                    selected_now = bool(
-                        st.session_state.selected_seichi
-                        and st.session_state.selected_seichi.get("id")
-                        == seichi["id"]
+            with st.expander(
+                f"♡ 好きな場所（{len(seichi_list)}）",
+                expanded=True,
+            ):
+                if not seichi_list:
+                    st.caption(
+                        "まだ登録がありません。「＋ 好きな場所を追加」から追加できます。"
                     )
-
-                    with st.container(border=True):
-                        if selected_now:
-                            st.markdown(f"**♡ {seichi['name']}**")
-                            st.caption("✓ コンパスで表示中")
-                        else:
+                else:
+                    for seichi in seichi_list:
+                        with st.container(border=True):
                             st.markdown(f"**♡ {seichi['name']}**")
 
                             if st.button(
-                                "この場所を指す",
+                                "コンパスで見る",
                                 key=f"favorite_{seichi['id']}",
                                 use_container_width=True,
                             ):
@@ -1028,62 +1044,56 @@ if supabase_connected:
                                 }
                                 st.rerun()
 
-                        with st.expander("名前を編集"):
-                            with st.form(
-                                key=f"rename_form_{seichi['id']}",
-                                clear_on_submit=False,
-                            ):
-                                new_name = st.text_input(
-                                    "表示する名前",
-                                    value=seichi["name"],
-                                    key=f"rename_input_{seichi['id']}",
-                                )
+                            with st.expander("編集"):
+                                with st.form(
+                                    key=f"rename_form_{seichi['id']}",
+                                    clear_on_submit=False,
+                                ):
+                                    new_name = st.text_input(
+                                        "表示する名前",
+                                        value=seichi["name"],
+                                        key=f"rename_input_{seichi['id']}",
+                                    )
 
-                                rename_submitted = st.form_submit_button(
-                                    "保存",
-                                    use_container_width=True,
-                                )
+                                    rename_submitted = st.form_submit_button(
+                                        "保存",
+                                        use_container_width=True,
+                                    )
 
-                            if rename_submitted:
-                                cleaned_name = new_name.strip()
+                                if rename_submitted:
+                                    cleaned_name = new_name.strip()
 
-                                if not cleaned_name:
-                                    st.warning("名前を入力してください。")
-                                elif cleaned_name == seichi["name"]:
-                                    st.info("名前は変更されていません。")
-                                else:
-                                    try:
-                                        (
-                                            supabase
-                                            .table("seichi")
-                                            .update({"name": cleaned_name})
-                                            .eq("id", seichi["id"])
-                                            .execute()
-                                        )
+                                    if not cleaned_name:
+                                        st.warning("名前を入力してください。")
+                                    elif cleaned_name == seichi["name"]:
+                                        st.info("名前は変更されていません。")
+                                    else:
+                                        try:
+                                            (
+                                                supabase
+                                                .table("seichi")
+                                                .update({"name": cleaned_name})
+                                                .eq("id", seichi["id"])
+                                                .execute()
+                                            )
+                                            st.rerun()
 
-                                        if selected_now:
-                                            st.session_state.selected_seichi = {
-                                                "id": seichi["id"],
-                                                "name": cleaned_name,
-                                                "latitude": seichi["latitude"],
-                                                "longitude": seichi["longitude"],
-                                            }
+                                        except Exception as error:
+                                            st.error("名前を変更できませんでした。")
+                                            st.caption(
+                                                "SupabaseのRLSでUPDATEが許可されているか確認してください。"
+                                            )
+                                            st.caption(
+                                                f"エラー種類：{type(error).__name__}"
+                                            )
 
-                                        st.rerun()
-
-                                    except Exception as error:
-                                        st.error("名前を変更できませんでした。")
-                                        st.caption(
-                                            "SupabaseのRLSでUPDATEが許可されているか確認してください。"
-                                        )
-                                        st.caption(
-                                            f"エラー種類：{type(error).__name__}"
-                                        )
-
-    except Exception as error:
-        st.error("好きな場所を読み込めませんでした。")
-        st.caption(f"エラー種類：{type(error).__name__}")
+        except Exception as error:
+            st.error("好きな場所を読み込めませんでした。")
+            st.caption(f"エラー種類：{type(error).__name__}")
 
 
-st.markdown("<div style=\"height:8px\"></div>", unsafe_allow_html=True)
+st.markdown(
+    '<div style="height:8px"></div>',
+    unsafe_allow_html=True,
+)
 st.caption("地図データ：Photon / © OpenStreetMap contributors")
