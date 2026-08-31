@@ -104,6 +104,7 @@ for key, default in {
     "searched_name": "",
     "selected_seichi": None,
     "night_mode": False,
+    "editing_seichi_id": None,
 }.items():
     if key not in st.session_state:
         st.session_state[key] = default
@@ -166,34 +167,51 @@ else:
 # =========================================
 st.markdown(
     f"""<style>
+html, body {{
+    background: {c["bg"]} !important;
+}}
+
 .stApp {{
     background-color: {c["bg"]};
 }}
 
+/* Streamlitの上部クロームを消して、タイトル切れと黒い余白を防ぐ */
+header[data-testid="stHeader"] {{
+    display: none !important;
+    height: 0 !important;
+    min-height: 0 !important;
+}}
+
+[data-testid="stToolbar"],
+[data-testid="stDecoration"],
+[data-testid="stStatusWidget"],
+.stDeployButton {{
+    display: none !important;
+}}
+
+#MainMenu, footer {{
+    visibility: hidden !important;
+}}
+
+div[data-testid="stAppViewContainer"] {{
+    padding-top: 0 !important;
+}}
+
 .block-container {{
     max-width: 760px;
-    padding-top: 1.0rem;
-    padding-bottom: 2.4rem;
+    padding-top: calc(0.72rem + env(safe-area-inset-top));
+    padding-bottom: calc(1.8rem + env(safe-area-inset-bottom));
 }}
 
 h1, h2, h3, p, label {{
     color: {c["text"]};
 }}
 
-[data-testid="stToolbar"] {{
-    visibility: hidden;
-    height: 0;
-}}
-
-#MainMenu, footer {{
-    visibility: hidden;
-}}
-
 div[data-testid="stTextInput"] input {{
     background: {c["input"]} !important;
     color: {c["text"]} !important;
     border: 1px solid {c["input_border"]} !important;
-    border-radius: 14px !important;
+    border-radius: 13px !important;
     box-shadow: none !important;
 }}
 
@@ -211,9 +229,9 @@ div[data-testid="stTextInput"] input::placeholder {{
     background: {c["button"]} !important;
     color: {c["button_text"]} !important;
     border: 1px solid {c["button_border"]} !important;
-    border-radius: 14px !important;
+    border-radius: 13px !important;
     font-weight: 700 !important;
-    min-height: 44px;
+    min-height: 42px;
 }}
 
 .stButton > button:hover,
@@ -222,42 +240,114 @@ div[data-testid="stTextInput"] input::placeholder {{
     color: {c["accent"]} !important;
 }}
 
-div[data-testid="stVerticalBlockBorderWrapper"] {{
-    background: {c["card"]};
-    border: 1px solid {c["card_border"]} !important;
-    border-radius: 18px !important;
+/* 主ボタンはアクセント色 */
+.stButton > button[kind="primary"],
+.stFormSubmitButton > button[kind="primary"] {{
+    background: {c["accent"]} !important;
+    color: #FFFFFF !important;
+    border-color: {c["accent"]} !important;
 }}
 
-details {{
-    background: {c["card"]} !important;
+div[data-testid="stVerticalBlockBorderWrapper"] {{
+    background: {c["card"]};
     border: 1px solid {c["card_border"]} !important;
     border-radius: 16px !important;
 }}
 
-details summary {{
+/* アコーディオンは開閉状態に関係なく高コントラスト */
+details {{
+    background: {c["card"]} !important;
+    border: 1px solid {c["card_border"]} !important;
+    border-radius: 15px !important;
+    overflow: hidden;
+}}
+
+details > summary {{
+    background: {c["card"]} !important;
+    color: {c["text"]} !important;
+    font-weight: 700 !important;
+    padding: 0.62rem 0.78rem !important;
+}}
+
+details[open] > summary,
+details > summary:hover {{
+    background: {c["soft"]} !important;
+    color: {c["text"]} !important;
+}}
+
+details > summary *,
+details[open] > summary * {{
+    color: {c["text"]} !important;
+    fill: {c["text"]} !important;
+}}
+
+/* 夜モードが操作できることを見せる */
+div[data-testid="stToggle"] {{
+    width: fit-content;
+    background: {c["card"]};
+    border: 1px solid {c["card_border"]};
+    border-radius: 999px;
+    padding: 0.25rem 0.62rem;
+    margin-bottom: 0.15rem;
+}}
+
+div[data-testid="stToggle"] p {{
+    color: {c["text"]} !important;
     font-weight: 700 !important;
 }}
 
 hr {{
     border-color: {c["line"]} !important;
+    margin: 0.65rem 0 !important;
+}}
+
+.favorite-name {{
+    color: {c["text"]};
+    font-size: 0.98rem;
+    line-height: 1.25;
+    font-weight: 750;
+    padding-top: 0.48rem;
+    overflow-wrap: anywhere;
+}}
+
+.favorite-edit-note {{
+    color: {c["sub"]};
+    font-size: 0.78rem;
 }}
 
 @media (max-width: 600px) {{
     .block-container {{
         max-width: 100%;
-        padding-top: 0.55rem;
-        padding-left: 0.85rem;
-        padding-right: 0.85rem;
-        padding-bottom: 1.8rem;
+        padding-top: calc(0.58rem + env(safe-area-inset-top));
+        padding-left: 0.72rem;
+        padding-right: 0.72rem;
+        padding-bottom: calc(1.35rem + env(safe-area-inset-bottom));
     }}
 
     div[data-testid="stVerticalBlock"] {{
-        gap: 0.5rem;
+        gap: 0.34rem;
     }}
 
     div[data-testid="stTextInput"] input {{
-        min-height: 46px;
+        min-height: 43px;
         font-size: 16px;
+    }}
+
+    .stButton > button,
+    .stFormSubmitButton > button {{
+        min-height: 42px;
+        padding: 0.34rem 0.5rem !important;
+        font-size: 0.88rem !important;
+    }}
+
+    details > summary {{
+        padding: 0.54rem 0.68rem !important;
+        min-height: 40px !important;
+    }}
+
+    .favorite-name {{
+        font-size: 0.92rem;
+        padding-top: 0.46rem;
     }}
 }}
 </style>""",
@@ -404,15 +494,36 @@ COMPASS_CSS = """
 @media (max-width: 480px) {
     .oshi-card {
         border-radius: 22px;
-        padding: 22px 14px 18px;
+        padding: 18px 12px 14px;
+    }
+
+    .oshi-badge {
+        padding: 6px 12px;
+        margin-bottom: 10px;
     }
 
     .oshi-title {
-        font-size: 24px;
+        font-size: 23px;
+        margin-bottom: 14px;
+    }
+
+    .oshi-dial {
+        width: min(54vw, 210px);
+        height: min(54vw, 210px);
     }
 
     .oshi-bearing {
-        font-size: 22px;
+        font-size: 21px;
+        margin-top: 13px;
+    }
+
+    .oshi-start {
+        margin-top: 12px;
+        padding: 10px 16px;
+    }
+
+    .oshi-status {
+        margin-top: 7px;
     }
 }
 """
@@ -480,6 +591,28 @@ export default function(component) {
     return directions[Math.floor((value + 22.5) / 45) % 8];
   }
 
+  function formatBearingGuide(value) {
+    const bearing = norm(value);
+    const cardinals = ["北", "東", "南", "西"];
+    const clockwise = ["東", "南", "西", "北"];
+    const counterClockwise = ["西", "北", "東", "南"];
+
+    let index = Math.round(bearing / 90) % 4;
+    let base = index * 90;
+    let diff = ((bearing - base + 540) % 360) - 180;
+    const amount = Math.round(Math.abs(diff));
+
+    if (amount <= 1) {
+      return `${cardinals[index]}方向`;
+    }
+
+    const toward = diff > 0
+      ? clockwise[index]
+      : counterClockwise[index];
+
+    return `${cardinals[index]}から${toward}へ${amount}°`;
+  }
+
   function calculateBearing(lat1Deg, lon1Deg, lat2Deg, lon2Deg) {
     const lat1 = toRad(lat1Deg);
     const lat2 = toRad(lat2Deg);
@@ -529,7 +662,7 @@ export default function(component) {
     }
 
     bearingText.textContent =
-      `${direction(destinationBearing)} · ${Math.round(destinationBearing)}°`;
+      `方位 ${Math.round(destinationBearing)}°`;
 
     if (currentHeading === null) {
       arrow.style.transform = `rotate(${destinationBearing}deg)`;
@@ -639,7 +772,8 @@ export default function(component) {
       destinationLon
     );
 
-    distanceText.textContent = formatDistance(distanceKm);
+    distanceText.textContent =
+      `${formatBearingGuide(destinationBearing)} ・ ${formatDistance(distanceKm)}`;
 
     gotLocation = true;
     applyCompass();
@@ -805,7 +939,7 @@ st.markdown(
 
 # 夜モードはトップ画面でもコンパス画面でも常に見える位置に置く
 st.toggle(
-    "🌙 夜モード",
+    "🌙 夜モード　ON / OFF",
     key="night_mode",
 )
 
@@ -1029,22 +1163,59 @@ else:
                 else:
                     for seichi in seichi_list:
                         with st.container(border=True):
-                            st.markdown(f"**♡ {seichi['name']}**")
+                            name_col, compass_col, edit_col = st.columns(
+                                [4.5, 3.4, 1.2],
+                                gap="small",
+                            )
 
-                            if st.button(
-                                "コンパスで見る",
-                                key=f"favorite_{seichi['id']}",
-                                use_container_width=True,
+                            with name_col:
+                                safe_name = html.escape(str(seichi["name"]))
+                                st.markdown(
+                                    f'<div class="favorite-name">♡ {safe_name}</div>',
+                                    unsafe_allow_html=True,
+                                )
+
+                            with compass_col:
+                                if st.button(
+                                    "コンパスで見る",
+                                    key=f"favorite_{seichi['id']}",
+                                    use_container_width=True,
+                                    type="primary",
+                                ):
+                                    st.session_state.selected_seichi = {
+                                        "id": seichi["id"],
+                                        "name": seichi["name"],
+                                        "latitude": seichi["latitude"],
+                                        "longitude": seichi["longitude"],
+                                    }
+                                    st.session_state.editing_seichi_id = None
+                                    st.rerun()
+
+                            with edit_col:
+                                if st.button(
+                                    "✎",
+                                    key=f"edit_{seichi['id']}",
+                                    use_container_width=True,
+                                    help="名前を編集",
+                                ):
+                                    if (
+                                        st.session_state.editing_seichi_id
+                                        == seichi["id"]
+                                    ):
+                                        st.session_state.editing_seichi_id = None
+                                    else:
+                                        st.session_state.editing_seichi_id = seichi["id"]
+                                    st.rerun()
+
+                            if (
+                                st.session_state.editing_seichi_id
+                                == seichi["id"]
                             ):
-                                st.session_state.selected_seichi = {
-                                    "id": seichi["id"],
-                                    "name": seichi["name"],
-                                    "latitude": seichi["latitude"],
-                                    "longitude": seichi["longitude"],
-                                }
-                                st.rerun()
+                                st.markdown(
+                                    '<div class="favorite-edit-note">表示名を変更</div>',
+                                    unsafe_allow_html=True,
+                                )
 
-                            with st.expander("編集"):
                                 with st.form(
                                     key=f"rename_form_{seichi['id']}",
                                     clear_on_submit=False,
@@ -1053,12 +1224,30 @@ else:
                                         "表示する名前",
                                         value=seichi["name"],
                                         key=f"rename_input_{seichi['id']}",
+                                        label_visibility="collapsed",
                                     )
 
-                                    rename_submitted = st.form_submit_button(
-                                        "保存",
-                                        use_container_width=True,
+                                    save_col, close_col = st.columns(
+                                        [1, 1],
+                                        gap="small",
                                     )
+
+                                    with save_col:
+                                        rename_submitted = st.form_submit_button(
+                                            "保存",
+                                            use_container_width=True,
+                                            type="primary",
+                                        )
+
+                                    with close_col:
+                                        close_submitted = st.form_submit_button(
+                                            "閉じる",
+                                            use_container_width=True,
+                                        )
+
+                                if close_submitted:
+                                    st.session_state.editing_seichi_id = None
+                                    st.rerun()
 
                                 if rename_submitted:
                                     cleaned_name = new_name.strip()
@@ -1066,7 +1255,8 @@ else:
                                     if not cleaned_name:
                                         st.warning("名前を入力してください。")
                                     elif cleaned_name == seichi["name"]:
-                                        st.info("名前は変更されていません。")
+                                        st.session_state.editing_seichi_id = None
+                                        st.rerun()
                                     else:
                                         try:
                                             (
@@ -1076,6 +1266,7 @@ else:
                                                 .eq("id", seichi["id"])
                                                 .execute()
                                             )
+                                            st.session_state.editing_seichi_id = None
                                             st.rerun()
 
                                         except Exception as error:
